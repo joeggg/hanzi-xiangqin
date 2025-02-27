@@ -1,0 +1,22 @@
+[project]
+name = "hanzi-ceshi"
+version = "0.1.0"
+description = "Chinese character test app backend service and CLI"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+  "fastapi>=0.115.9,<1",
+  "pydantic-settings>=2.8.1",
+  "pydantic>=2.10.6,<3",
+  "uvicorn>=0.34.0,<1",
+]
+
+[project.scripts]
+hanzi-ceshi = "hanzi_ceshi:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = ["mypy>=1.15.0", "ruff>=0.9.7"]
