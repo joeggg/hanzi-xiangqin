@@ -17,6 +17,10 @@ class Tester(ABC):
         """Yields characters until the test is over"""
 
     @abstractmethod
+    def estimate_count(self) -> int:
+        """Estimates the number of characters known by the user"""
+
+    @abstractmethod
     def print_debug_info(self) -> None:
         """Prints detailed information about the test"""
 
@@ -33,18 +37,22 @@ class SimpleTester(Tester):
         self.bin_size = bin_size
         self.answers: dict[int, GuessResults] = defaultdict(GuessResults)
 
-    def characters(self) -> Generator[Hanzi, bool, int]:
+    def characters(self) -> Generator[Hanzi, bool, None]:
         bins = list(itertools.batched(self.chars, 500))
 
         current_bin = 0
         times_visited: dict[int, int] = defaultdict(int)
+        char = random.choice(bins[current_bin])
 
         while True:
-            char = random.choice(bins[current_bin])
-            times_visited[current_bin] += 1
             answer = yield char
 
-            if answer == "y":
+            if answer is None:
+                continue
+
+            times_visited[current_bin] += 1
+
+            if answer:
                 self.answers[current_bin].correct += 1
                 if current_bin != len(bins) - 1:
                     current_bin += 1
@@ -56,6 +64,9 @@ class SimpleTester(Tester):
             if times_visited[current_bin] == 4:
                 break
 
+            char = random.choice(bins[current_bin])
+
+    def estimate_count(self) -> int:
         return 0
 
     def print_debug_info(self):

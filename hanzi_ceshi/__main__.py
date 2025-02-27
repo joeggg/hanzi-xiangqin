@@ -8,10 +8,14 @@ def main():
     test = tester.characters()
     for char in test:
         print(char)
-        answer = input("Correct? (y/n): ") == "y"
-        test.send(answer)
+        answer = input("Do you know this? (y/n): ") == "y"
+        try:
+            test.send(answer)
+        except StopIteration:
+            pass
 
-    count = test.close()
+    tester.print_debug_info()
+    count = tester.estimate_count()
     print(f"You know an estimated {count} characters")
 
 
