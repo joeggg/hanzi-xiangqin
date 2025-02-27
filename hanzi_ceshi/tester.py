@@ -11,6 +11,7 @@ from .data_types import Hanzi
 class Tester(ABC):
     def __init__(self, chars: list[Hanzi]) -> None:
         self.chars = chars
+        self.name = "Tester"
 
     @abstractmethod
     def characters(self) -> Iterator[Hanzi]:
@@ -36,6 +37,7 @@ class SimpleTester(Tester):
         super().__init__(chars)
         self.bin_size = bin_size
         self.answers: dict[int, GuessResults] = defaultdict(GuessResults)
+        self.name = "simple"
 
     def characters(self) -> Generator[Hanzi, bool, None]:
         bins = list(itertools.batched(self.chars, 500))

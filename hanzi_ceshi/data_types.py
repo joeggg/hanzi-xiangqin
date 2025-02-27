@@ -16,7 +16,7 @@ def load_character_list() -> list[Hanzi]:
     with open(f"{config.data_dir}/hanzi.txt") as f:
         simplified_lines = f.readlines()
 
-    with open(f"{config.data_dir}/hanzi.txt") as f:
+    with open(f"{config.data_dir}/hanzi_trad.txt") as f:
         traditional_lines = f.readlines()
 
     if len(simplified_lines) != len(traditional_lines):
