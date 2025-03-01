@@ -69,7 +69,36 @@ class SimpleTester(Tester):
             char = random.choice(bins[current_bin])
 
     def estimate_count(self) -> int:
-        return 0
+        correct_ratios = {
+            bin: results.correct / (results.correct + results.incorrect)
+            for bin, results in self.answers.items()
+        }
+        max_bin = max(self.answers.keys())
+
+        # Get the last bin with a ratio over 50% and the first bin with a non-zero ratio below 50%
+        last_over_50, last_below_50 = 0, max_bin + 1
+        for bin, ratio in correct_ratios.items():
+            if ratio >= 0.5:
+                last_over_50 = bin
+            elif ratio > 0:
+                last_below_50 = bin
+
+        # Get the number of chars up to each bin and the diff between the 2
+        last_over_50_chars = (last_over_50 + 1) * self.bin_size
+        last_below_50_chars = (last_below_50 + 1) * self.bin_size
+        diff = last_below_50_chars - last_over_50_chars
+
+        # Get the midpoint between the latest max and bin ratios
+        last_over_50_ratio = correct_ratios[last_over_50]
+        last_below_50_ratio = correct_ratios.get(last_below_50, 0)
+        ratio_midpoint = (last_over_50_ratio + last_below_50_ratio) / 2
+        # Multipy ratio midpoint by the diff to estimate characters known above the last over 50% bin
+        extra_chars = ratio_midpoint * diff
+
+        # Assume all chars before last over 50% bin are known
+        # Use the ratio to get characters known in that last bin
+        # Add the extra chars estimated above that last bin
+        return round((last_over_50 + last_over_50_ratio) * self.bin_size) + round(extra_chars)
 
     def print_debug_info(self):
         print("\n****Results****\n")
