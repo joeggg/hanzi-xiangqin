@@ -1,3 +1,4 @@
+import logging
 from typing import Literal
 
 from fastapi import APIRouter
@@ -12,4 +13,5 @@ class HealthResponse(BaseModel):
 
 @router.get("/health")
 async def health() -> HealthResponse:
+    logging.info("Health check")
     return HealthResponse()

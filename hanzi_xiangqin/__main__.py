@@ -1,7 +1,9 @@
 import argparse
+import logging
 import time
 
 from hanzi_xiangqin.data_types import load_character_list
+from hanzi_xiangqin.logger import set_up_logging
 from hanzi_xiangqin.tester import SimpleTester
 
 
@@ -46,12 +48,15 @@ def parse_args() -> argparse.Namespace:
 def run_api() -> None:
     import uvicorn
 
+    set_up_logging()
     uvicorn.run("hanzi_xiangqin.api.app:create_app", host="0.0.0.0", port=8000)
 
 
 def run_worker() -> None:
+    set_up_logging()
+
     while True:
-        print("Worker running")
+        logging.info("Worker running")
         time.sleep(10)
 
 
