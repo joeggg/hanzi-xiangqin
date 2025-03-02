@@ -1,32 +1,14 @@
 import itertools
 import random
-from abc import ABC, abstractmethod
 from collections import defaultdict
 from dataclasses import asdict, dataclass
-from typing import Generator, Iterator
+from typing import Generator
 
-from .data_types import Hanzi
-
-
-class Tester(ABC):
-    def __init__(self, chars: list[Hanzi]) -> None:
-        self.chars = chars
-        self.name = "Tester"
-
-    @abstractmethod
-    def characters(self) -> Iterator[Hanzi]:
-        """Yields characters until the test is over"""
-
-    @abstractmethod
-    def estimate_count(self) -> int:
-        """Estimates the number of characters known by the user"""
-
-    @abstractmethod
-    def print_debug_info(self) -> None:
-        """Prints detailed information about the test"""
+from ..data_types import Hanzi
+from .tester import Tester
 
 
-@dataclass()
+@dataclass
 class GuessResults:
     correct: int = 0
     incorrect: int = 0

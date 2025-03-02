@@ -1,10 +1,8 @@
 import argparse
-import logging
-import time
+import asyncio
 
 from hanzi_xiangqin.data_types import load_character_list
 from hanzi_xiangqin.logger import set_up_logging
-from hanzi_xiangqin.tester import SimpleTester
 
 
 def main() -> None:
@@ -53,14 +51,16 @@ def run_api() -> None:
 
 
 def run_worker() -> None:
+    from hanzi_xiangqin.worker import worker
+
     set_up_logging()
 
-    while True:
-        logging.info("Worker running")
-        time.sleep(10)
+    asyncio.run(worker())
 
 
 def run_cli() -> None:
+    from hanzi_xiangqin.testers import SimpleTester
+
     tester = SimpleTester(load_character_list(), bin_size=500)
 
     test = tester.characters()
