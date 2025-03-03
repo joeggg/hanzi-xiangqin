@@ -1,3 +1,4 @@
+import json
 from abc import ABC, abstractmethod
 from typing import Generator
 
@@ -18,5 +19,10 @@ class Tester(ABC):
         """Estimates the number of characters known by the user"""
 
     @abstractmethod
+    def get_breakdown(self) -> dict:
+        """Returns a breakdown of the test results"""
+
     def print_debug_info(self) -> None:
-        """Prints detailed information about the test"""
+        print("\n****Breakdown****\n")
+        print(json.dumps(self.get_breakdown(), indent=2))
+        print("\n***************\n")

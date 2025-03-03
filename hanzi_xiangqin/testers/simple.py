@@ -82,8 +82,8 @@ class SimpleTester(Tester):
         # Add the extra chars estimated above that last bin
         return round((last_over_50 + last_over_50_ratio) * self.bin_size) + round(extra_chars)
 
-    def print_debug_info(self):
-        print("\n****Results****\n")
+    def get_breakdown(self) -> dict:
+        breakdown = {}
         for bin, results in self.answers.items():
-            print(f"{(bin * self.bin_size) + 1}-{(bin + 1) * self.bin_size}", asdict(results))
-        print()
+            breakdown[f"{(bin * self.bin_size) + 1}-{(bin + 1) * self.bin_size}"] = asdict(results)
+        return breakdown

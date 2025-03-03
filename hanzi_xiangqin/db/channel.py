@@ -61,20 +61,24 @@ class TestChannel:
         await self.redis.expire(self.char_queue_key, 3600)
 
     async def put_answer(self, answer: bool) -> None:
-        await self.redis.lpush(self.answer_queue_key, answer)
+        await self.redis.lpush(self.answer_queue_key, "1" if answer else "0")
         await self.redis.expire(self.answer_queue_key, 3600)
 
     async def next_character(self) -> Hanzi | None:
-        result = await self.redis.rpop(self.test_id)
+        result = await self.redis.rpop(self.char_queue_key)
         if result is None:
-            if self.redis.exists(self.test_id):
+            if await self.redis.exists(self.test_id):
                 return None
             raise TestDone("Test is complete")
 
         return Hanzi(**orjson.loads(result))
 
     async def next_answer(self) -> bool | None:
-        return await self.redis.rpop(self.answer_queue_key)
+        answer = await self.redis.rpop(self.answer_queue_key)
+        if answer is None:
+            return None
+        logging.info("Got answer: %s", answer)
+        return answer == "1"
 
     async def put_results(self, result: TestResults) -> None:
         config = get_config()

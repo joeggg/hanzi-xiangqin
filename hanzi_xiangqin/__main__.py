@@ -2,9 +2,8 @@ import argparse
 import asyncio
 
 from hanzi_xiangqin.config import get_config
-
-from .data_types import load_character_list
-from .logger import set_up_logging
+from hanzi_xiangqin.data_types import load_character_list
+from hanzi_xiangqin.logger import set_up_logging
 
 
 def main() -> None:
