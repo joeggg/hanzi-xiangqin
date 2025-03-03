@@ -10,6 +10,7 @@ ENV PATH="$PATH:/root/.local/bin"
 COPY pyproject.toml uv.lock README.md ./
 RUN uv sync --no-install-project --frozen --no-dev --group=worker 
 
+COPY data data
 COPY hanzi_xiangqin ./hanzi_xiangqin
 
 USER worker

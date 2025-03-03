@@ -3,7 +3,9 @@ import logging
 import signal
 import time
 
-from .db import get_async_redis
+from .data_types import load_character_list
+from .db import TestChannel, get_async_redis, pop_test
+from .testers import TESTERS, Tester
 
 
 async def worker() -> None:
@@ -17,11 +19,15 @@ async def worker() -> None:
 
     signal.signal(signal.SIGINT, handle_shutdown)
 
+    chars = load_character_list()
+
     start = time.time()
     while not shutting_down:
-        test_id = await redis.rpop("tests")
-        if test_id:
-            logging.info("Got test %s", test_id)
+        test = await pop_test(redis)
+        if test:
+            channel = TestChannel(redis, test.test_id)
+            tester = TESTERS[test.test_type]
+            await run_test(channel, tester(chars))
             continue
 
         await asyncio.sleep(0.2)
@@ -29,3 +35,6 @@ async def worker() -> None:
         if time.time() - start > 60:
             logging.info("Worker heartbeat")
             start = time.time()
+
+
+async def run_test(channel: TestChannel, tester: Tester) -> None: ...

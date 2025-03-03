@@ -2,7 +2,7 @@ import logging
 
 
 def set_up_logging() -> None:
-    logger = logging.getLogger("")
+    logger = logging.getLogger()
     logger.setLevel(logging.INFO)
 
     stream_handler = logging.StreamHandler()

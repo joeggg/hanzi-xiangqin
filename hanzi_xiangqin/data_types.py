@@ -1,18 +1,17 @@
 import re
 from collections import defaultdict
-from dataclasses import dataclass
+
+from pydantic import BaseModel
 
 from .config import get_config
 
 
-@dataclass
-class Definition:
+class Definition(BaseModel):
     pinyin: str
     text: str
 
 
-@dataclass
-class Hanzi:
+class Hanzi(BaseModel):
     simplified: str
     traditional: str
     rank: int
@@ -29,7 +28,7 @@ def load_dictionary() -> dict[str, list[Definition]]:
                 continue
 
             simplified, pinyin, definition = match.groups()
-            dictionary[simplified].append(Definition(pinyin, definition[1:-1]))
+            dictionary[simplified].append(Definition(pinyin=pinyin, text=definition[1:-1]))
     return dictionary
 
 
@@ -54,10 +53,10 @@ def load_character_list() -> list[Hanzi]:
 
             chars.append(
                 Hanzi(
-                    simplified,
-                    traditional,
-                    i + 1,
-                    dictionary.get(simplified, dictionary.get(traditional, [])),
+                    simplified=simplified,
+                    traditional=traditional,
+                    rank=i + 1,
+                    definitions=dictionary.get(simplified, dictionary.get(traditional, [])),
                 )
             )
 
