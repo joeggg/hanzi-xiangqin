@@ -1,8 +1,10 @@
 import argparse
 import asyncio
 
-from hanzi_xiangqin.data_types import load_character_list
-from hanzi_xiangqin.logger import set_up_logging
+from hanzi_xiangqin.config import get_config
+
+from .data_types import load_character_list
+from .logger import set_up_logging
 
 
 def main() -> None:
@@ -47,7 +49,8 @@ def run_api() -> None:
     import uvicorn
 
     set_up_logging()
-    uvicorn.run("hanzi_xiangqin.api.app:create_app", host="0.0.0.0", port=8000)
+    config = get_config()
+    uvicorn.run("hanzi_xiangqin.api.app:create_app", host="0.0.0.0", port=8000, reload=config.dev)
 
 
 def run_worker() -> None:

@@ -6,10 +6,22 @@ services:
       dockerfile: ./docker/Dockerfile.api
     ports:
       - "8000:8000"
+    environment:
+      - DEV=${DEV}
+    develop:
+      watch:
+        - path: ./hanzi_xiangqin
+          action: sync
+          target: /app/hanzi_xiangqin
   worker:
     image: hx-worker:latest
     build:
       context: .
       dockerfile: ./docker/Dockerfile.worker
+    develop:
+      watch:
+        - path: ./hanzi_xiangqin
+          action: sync+restart
+          target: /app/hanzi_xiangqin
   redis:
     image: "redis:latest"
