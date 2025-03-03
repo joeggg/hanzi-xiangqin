@@ -28,9 +28,10 @@ class TestDone(Exception):
 
 async def queue_test(redis: Redis, data: Test) -> None:
     logging.info("Queueing test %s", data.test_id)
+    config = get_config()
     async with redis.pipeline() as pipe:
         await pipe.lpush("test_queue", orjson.dumps(asdict(data)))
-        await pipe.setex(data.test_id, 3600, "1")
+        await pipe.setex(data.test_id, config.test_timeout, "1")
         await pipe.execute()
 
 
@@ -52,17 +53,18 @@ class TestChannel:
         self.char_queue_key = f"{self.test_id}_char_queue"
         self.answer_queue_key = f"{self.test_id}_answer_queue"
         self.results_key = f"{self.test_id}_results"
+        self.config = get_config()
 
     async def end(self) -> None:
         await self.redis.delete(self.test_id)
 
     async def put_character(self, hanzi: Hanzi) -> None:
         await self.redis.lpush(self.char_queue_key, orjson.dumps(hanzi.model_dump()))
-        await self.redis.expire(self.char_queue_key, 3600)
+        await self.redis.expire(self.char_queue_key, self.config.test_timeout)
 
     async def put_answer(self, answer: bool) -> None:
         await self.redis.lpush(self.answer_queue_key, "1" if answer else "0")
-        await self.redis.expire(self.answer_queue_key, 3600)
+        await self.redis.expire(self.answer_queue_key, self.config.test_timeout)
 
     async def next_character(self) -> Hanzi | None:
         result = await self.redis.rpop(self.char_queue_key)
