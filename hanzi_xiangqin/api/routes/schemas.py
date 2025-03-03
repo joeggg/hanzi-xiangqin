@@ -1,4 +1,3 @@
-import uuid
 
 from pydantic import BaseModel
 
@@ -6,7 +5,7 @@ from ...data_types import Hanzi
 
 
 class StartTestResponse(BaseModel):
-    test_id: uuid.UUID
+    test_id: str
 
 
 class NextCharactorResponse(BaseModel):
