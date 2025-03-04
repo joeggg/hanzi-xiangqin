@@ -79,7 +79,6 @@ class TestChannel:
         answer = await self.redis.rpop(self.answer_queue_key)
         if answer is None:
             return None
-        logging.info("Got answer: %s", answer)
         return answer == "1"
 
     async def put_results(self, result: TestResults) -> None:

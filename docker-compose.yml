@@ -3,7 +3,7 @@ services:
     image: hx-api:latest
     build:
       context: .
-      dockerfile: ./docker/Dockerfile.api
+      dockerfile: ./docker/api.Dockerfile
     ports:
       - "8000:8000"
     environment:
@@ -17,11 +17,22 @@ services:
     image: hx-worker:latest
     build:
       context: .
-      dockerfile: ./docker/Dockerfile.worker
+      dockerfile: ./docker/worker.Dockerfile
     develop:
       watch:
         - path: ./hanzi_xiangqin
           action: sync+restart
           target: /app/hanzi_xiangqin
+  ui:
+    image: hx-ui:latest
+    build:
+      context: .
+      dockerfile: ./docker/ui.Dockerfile
+    ports:
+      - "3000:3000"
+    develop:
+      watch:
+        - path: ./ui
+          action: rebuild
   redis:
     image: "redis:latest"
