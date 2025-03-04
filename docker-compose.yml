@@ -7,7 +7,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DEV=${DEV}
+      - DEV=true
     develop:
       watch:
         - path: ./hanzi_xiangqin
@@ -28,11 +28,16 @@ services:
     build:
       context: .
       dockerfile: ./docker/ui.Dockerfile
+      target: development
     ports:
       - "3000:3000"
     develop:
       watch:
-        - path: ./ui
-          action: rebuild
+        - path: ./ui/app
+          action: sync
+          target: /app/app
+        - path: ./ui/public
+          action: sync
+          target: /app/public
   redis:
     image: "redis:latest"
