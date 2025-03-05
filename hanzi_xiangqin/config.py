@@ -9,7 +9,7 @@ class Config(BaseSettings):
     data_dir: str = "data"
     result_cache_ttl: int = 600
     test_timeout: int = 3600
-    answer_timeout: int = 900
+    answer_timeout: int = 60
     dev: bool = False
 
     @field_validator("dev", mode="before")

@@ -1,8 +1,11 @@
 "use client";
 
-import { Box, Button, Card, Popover } from "@radix-ui/themes";
+import { Box, Button, Flex } from "@radix-ui/themes";
 import { useParams, useRouter } from "next/navigation";
 import { JSX, useCallback, useEffect, useState } from "react";
+import { DndProvider } from "react-dnd";
+import { TouchBackend } from "react-dnd-touch-backend";
+import HanziCard from "app/components/card";
 
 interface Character {
   simplified: string;
@@ -16,32 +19,11 @@ interface Definition {
   text: string;
 }
 
-const newCard = (character: Character): JSX.Element => {
-  return (
-    <Card>
-      <div className="font-semibold text-8xl text-center">
-        {character.simplified}
-      </div>
-      <Popover.Root>
-        <Popover.Trigger>
-          <Button variant="soft">Definition</Button>
-        </Popover.Trigger>
-        <Popover.Content>
-          <Box>
-            {character.definitions.map((def, index) => (
-              <div key={index}>{def.text}</div>
-            ))}
-          </Box>
-        </Popover.Content>
-      </Popover.Root>
-    </Card>
-  );
-};
-
 export default function TestPage() {
   const { id } = useParams();
-  const [card, setCard] = useState<JSX.Element | null>(null);
   const router = useRouter();
+
+  const [card, setCard] = useState<JSX.Element>(<HanziCard />);
 
   const nextCharacter = useCallback(async (): Promise<Character | null> => {
     try {
@@ -61,28 +43,55 @@ export default function TestPage() {
     return null;
   }, [id, router]);
 
-  const submitAnswer = async () => {
-    const character = await nextCharacter();
-    if (character) {
-      setCard(<div>{character.simplified}</div>);
-    }
-  };
+  const sendAnswer = useCallback(
+    async (answer: boolean): Promise<undefined> => {
+      try {
+        await fetch(
+          `${process.env.NEXT_PUBLIC_BASE_URL}/tests/${id}/answer?answer=${answer}`,
+          { method: "POST" },
+        );
+      } catch (error) {
+        console.error(error);
+        return;
+      }
+
+      setCard(<HanziCard />);
+
+      for (let i = 0; i < 10; i++) {
+        const character = await nextCharacter();
+        if (character) {
+          setCard(<HanziCard character={character} />);
+          return;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 200));
+      }
+    },
+    [id, nextCharacter],
+  );
+
+  const sendYes = useCallback(() => {
+    sendAnswer(true);
+  }, [sendAnswer]);
+
+  const sendNo = useCallback(() => {
+    sendAnswer(false);
+  }, [sendAnswer]);
 
   useEffect(() => {
     nextCharacter().then((character) => {
       if (character) {
-        setCard(newCard(character));
+        setCard(<HanziCard character={character} />);
       }
     });
   }, [nextCharacter]);
 
   return (
-    <div className="items-center">
-      <Box width="240px" height="400px" className="items-center">
-        <button onClick={submitAnswer} className="items-center">
-          {card}
-        </button>
-      </Box>
-    </div>
+    <DndProvider backend={TouchBackend}>
+      <Box className="items-center">{card}</Box>
+      <Flex gap={"8"} align={"center"}>
+        <Button onClick={sendNo}>no</Button>
+        <Button onClick={sendYes}>yes</Button>
+      </Flex>
+    </DndProvider>
   );
 }

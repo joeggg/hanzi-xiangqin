@@ -12,6 +12,9 @@
     "@radix-ui/themes": "^3.2.1",
     "next": "15.2.1",
     "react": "^19.0.0",
+    "react-dnd": "^16.0.1",
+    "react-dnd-html5-backend": "^16.0.1",
+    "react-dnd-touch-backend": "^16.0.1",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
