@@ -24,7 +24,7 @@ async def run_worker() -> None:
     chars = load_character_list()
 
     tasks: list[asyncio.Task] = []
-    max_tasks = 10
+    max_tasks = 100
 
     task_check_interval = 5
     heartbeat_interval = 60
