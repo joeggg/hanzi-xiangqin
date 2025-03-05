@@ -26,18 +26,17 @@ services:
   ui:
     image: hx-ui:latest
     build:
-      context: .
-      dockerfile: ./docker/ui.Dockerfile
+      context: ./ui
+      dockerfile: ../docker/ui.Dockerfile
       target: development
     ports:
       - "3000:3000"
     develop:
       watch:
-        - path: ./ui/app
+        - path: ./ui
           action: sync
-          target: /app/app
-        - path: ./ui/public
-          action: sync
-          target: /app/public
+          target: /app
+          ignore:
+            - node_modules
   redis:
     image: "redis:latest"
