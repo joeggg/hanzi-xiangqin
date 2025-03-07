@@ -1,5 +1,6 @@
 import { Box, Button, Card, Popover, Spinner } from "@radix-ui/themes";
 import { useDrag } from "react-dnd";
+import { yrdzst } from "app/fonts";
 
 interface Character {
   simplified: string;
@@ -19,10 +20,12 @@ export default function HanziCard({ character }: { character?: Character }) {
   }));
 
   return (
-    <Card ref={drag}>
+    <Card ref={dragPreview}>
       {character ? (
         <Box className="text-center space-y-16 p-10">
-          <div className="text-8xl">{character.simplified}</div>
+          <div className={`text-8xl ${yrdzst.className}`}>
+            {character.simplified}
+          </div>
           <Popover.Root>
             <Popover.Trigger>
               <Button variant="soft">Definition</Button>
