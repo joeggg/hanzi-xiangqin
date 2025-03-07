@@ -50,33 +50,38 @@ class TestChannel:
         self.redis = redis
         self.test_id = test_id
 
-        self.char_queue_key = f"{self.test_id}_char_queue"
-        self.answer_queue_key = f"{self.test_id}_answer_queue"
+        self.char_key = f"{self.test_id}_char_queue"
+        self.answer_key = f"{self.test_id}_answer_queue"
         self.results_key = f"{self.test_id}_results"
+
         self.config = get_config()
 
     async def end(self) -> None:
-        await self.redis.delete(self.test_id)
+        for key in [self.test_id, self.char_key, self.answer_key]:
+            await self.redis.delete(key)
 
     async def put_character(self, hanzi: Hanzi) -> None:
-        await self.redis.lpush(self.char_queue_key, orjson.dumps(hanzi.model_dump()))
-        await self.redis.expire(self.char_queue_key, self.config.test_timeout)
+        await self.redis.setex(
+            self.char_key, self.config.test_timeout, orjson.dumps(hanzi.model_dump())
+        )
 
     async def put_answer(self, answer: bool) -> None:
-        await self.redis.lpush(self.answer_queue_key, "1" if answer else "0")
-        await self.redis.expire(self.answer_queue_key, self.config.test_timeout)
+        async with self.redis.pipeline() as pipe:
+            await pipe.delete(self.char_key)
+            await pipe.setex(self.answer_key, self.config.test_timeout, "1" if answer else "0")
+            await pipe.execute()
 
     async def next_character(self) -> Hanzi | None:
-        result = await self.redis.rpop(self.char_queue_key)
+        result = await self.redis.get(self.char_key)
         if result is None:
-            if await self.redis.exists(self.test_id):
-                return None
-            raise TestDone("Test is complete")
+            if not (await self.redis.exists(self.test_id)):
+                raise TestDone("Test is complete")
+            return None
 
         return Hanzi(**orjson.loads(result))
 
     async def next_answer(self) -> bool | None:
-        answer = await self.redis.rpop(self.answer_queue_key)
+        answer = await self.redis.getdel(self.answer_key)
         if answer is None:
             return None
         return answer == "1"

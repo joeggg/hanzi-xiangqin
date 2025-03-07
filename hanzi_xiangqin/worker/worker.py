@@ -65,10 +65,10 @@ async def run_test(channel: TestChannel, tester: Tester) -> None:
         await channel.put_character(character)
 
         answer = await get_answer(channel)
-        logging.info("[%s] Got answer: %s", channel.test_id, answer)
         if answer is None:
             await channel.end()
             return
+        logging.info("[%s] Got answer: %s", channel.test_id, answer)
 
         try:
             test.send(answer)
