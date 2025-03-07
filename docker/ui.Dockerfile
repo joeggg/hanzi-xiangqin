@@ -4,7 +4,7 @@ FROM base AS deps
 
 WORKDIR /app
 
-COPY package.json package-lock.json next.config.ts postcss.config.mjs .env ./
+COPY package.json package-lock.json next.config.ts postcss.config.mjs .env tsconfig.json ./
 RUN npm install
 
 COPY --chown=ui public ./public

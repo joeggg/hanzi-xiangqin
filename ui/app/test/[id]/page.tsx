@@ -1,11 +1,13 @@
 "use client";
 
-import { Box, Button, Flex } from "@radix-ui/themes";
 import { useParams, useRouter } from "next/navigation";
 import { JSX, useCallback, useEffect, useState } from "react";
 import { DndProvider } from "react-dnd";
 import { TouchBackend } from "react-dnd-touch-backend";
+import { Box, Button, Flex } from "@radix-ui/themes";
+
 import HanziCard from "app/components/card";
+import client from "app/tools/client";
 
 interface Character {
   simplified: string;
@@ -27,10 +29,8 @@ export default function TestPage() {
 
   const nextCharacter = useCallback(async (): Promise<Character | null> => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/tests/${id}/next`,
-      );
-      const data = await response.json();
+      const response = await client.get(`/tests/${id}/next`);
+      const data = response.data;
       if (data && data.character) {
         return data.character as Character;
       }
@@ -46,10 +46,7 @@ export default function TestPage() {
   const sendAnswer = useCallback(
     async (answer: boolean): Promise<undefined> => {
       try {
-        await fetch(
-          `${process.env.NEXT_PUBLIC_BASE_URL}/tests/${id}/answer?answer=${answer}`,
-          { method: "POST" },
-        );
+        await client.post(`/tests/${id}/answer?answer=${answer}`);
       } catch (error) {
         console.error(error);
         return;
@@ -57,13 +54,12 @@ export default function TestPage() {
 
       setCard(<HanziCard />);
 
-      for (let i = 0; i < 10; i++) {
-        const character = await nextCharacter();
-        if (character) {
-          setCard(<HanziCard character={character} />);
-          return;
-        }
-        await new Promise((resolve) => setTimeout(resolve, 200));
+      // Small delay to wait for processing
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      const character = await nextCharacter();
+      if (character) {
+        setCard(<HanziCard character={character} />);
+        return;
       }
     },
     [id, nextCharacter],
@@ -86,7 +82,7 @@ export default function TestPage() {
   }, [nextCharacter]);
 
   return (
-    <DndProvider backend={TouchBackend}>
+    <DndProvider backend={TouchBackend} options={{ enableMouseEvents: true }}>
       <Box className="items-center">{card}</Box>
       <Flex gap={"8"} align={"center"}>
         <Button onClick={sendNo}>no</Button>

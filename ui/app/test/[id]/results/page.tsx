@@ -1,17 +1,17 @@
 import { Text } from "@radix-ui/themes";
 
+import client from "app/tools/client";
+
 export default async function ResultsPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL}/tests/${id}/results`,
-  );
-  const data = await response.json();
+  const response = await client.get(`/tests/${id}/results`);
+  const data = response.data;
 
-  return response.ok ? (
+  return response.status === 200 ? (
     <>
       <Text weight="bold" size="4" align="center">
         You know an estimated
