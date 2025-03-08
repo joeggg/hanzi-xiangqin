@@ -19,11 +19,11 @@ jobs:
       with:
         enable-cache: true
 
-    - name: Run ruff
+    - name: Run checks
       run: |
           uv sync --all-groups
-          ruff check hanzi_xiangqin
-          mypy hanzi_xiangqin
+          uv run ruff check hanzi_xiangqin
+          uv run mypy hanzi_xiangqin
 
   test:
     runs-on: ubuntu-latest
@@ -41,7 +41,7 @@ jobs:
       with:
         enable-cache: true
 
-    - name: Run mypy
+    - name: Run tests
       run: |
           uv sync --all-groups
-          pytest tests
+          uv run pytest tests
