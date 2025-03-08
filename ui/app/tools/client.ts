@@ -6,7 +6,7 @@ const client = axios.create({
 });
 
 axiosRetry(client, {
-  retries: 10,
+  retries: 5,
   retryDelay: axiosRetry.exponentialDelay,
 });
 
