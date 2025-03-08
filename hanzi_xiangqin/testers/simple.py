@@ -74,7 +74,8 @@ class SimpleTester(Tester):
         last_over_50_ratio = correct_ratios[last_over_50]
         last_below_50_ratio = correct_ratios.get(last_below_50, 0)
         ratio_midpoint = (last_over_50_ratio + last_below_50_ratio) / 2
-        # Multipy ratio midpoint by the diff to estimate characters known above the last over 50% bin
+        # Multipy ratio midpoint by the diff to estimate characters known above the last over 50%
+        # bin
         extra_chars = ratio_midpoint * diff
 
         # Assume all chars before last over 50% bin are known

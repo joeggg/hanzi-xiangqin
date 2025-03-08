@@ -21,7 +21,12 @@ build-backend = "hatchling.build"
 [dependency-groups]
 api = ["fastapi>=0.115.9", "uvicorn>=0.34.0"]
 worker = ["scipy>=1.15.2"]
-dev = ["mypy>=1.15.0", "ruff>=0.9.7", "types-redis>=4.6.0.20241004"]
+dev = [
+    "mypy>=1.15.0",
+    "pytest>=8.3.5",
+    "ruff>=0.9.7",
+    "types-redis>=4.6.0.20241004",
+]
 
 [[tool.mypy.overrides]]
 module = ["orjson.*"]
