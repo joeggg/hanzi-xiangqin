@@ -1,21 +1,19 @@
-from .channel import (
+from .channel import Channel
+from .data_types import (
     Test,
-    TestChannel,
     TestDone,
+    TestNotFound,
     TestResults,
     TestType,
-    pop_test,
-    queue_test,
 )
 from .setup import get_async_redis
 
 __all__ = [
+    "Channel",
     "Test",
-    "TestChannel",
     "TestDone",
+    "TestNotFound",
     "TestResults",
     "TestType",
     "get_async_redis",
-    "pop_test",
-    "queue_test",
 ]

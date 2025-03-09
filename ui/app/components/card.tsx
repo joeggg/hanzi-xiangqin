@@ -17,10 +17,13 @@ export default function HanziCard({ character }: { character?: Character }) {
   const [collected, drag, dragPreview] = useDrag(() => ({
     type: "card",
     item: { id: 0 },
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
   }));
 
   return (
-    <Card ref={drag}>
+    <Card ref={drag} style={{ opacity: collected.isDragging ? 0 : 1 }}>
       {character ? (
         <Box className="text-center space-y-16 p-10">
           <div className={`text-8xl ${yrdzst.className}`}>

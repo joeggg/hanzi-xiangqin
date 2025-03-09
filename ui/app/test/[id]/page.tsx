@@ -8,6 +8,7 @@ import { Box, Button, Flex } from "@radix-ui/themes";
 
 import HanziCard from "app/components/card";
 import client from "app/tools/client";
+import { HTML5Backend } from "react-dnd-html5-backend";
 
 interface Character {
   simplified: string;
@@ -30,6 +31,7 @@ export default function TestPage() {
   const nextCharacter = useCallback(async (): Promise<Character | null> => {
     try {
       const response = await client.get(`/tests/${id}/next`);
+
       const data = response.data;
       if (data && data.character) {
         return data.character as Character;
@@ -38,7 +40,10 @@ export default function TestPage() {
         router.push(`/test/${id}/results`);
       }
     } catch (error) {
-      console.error(error);
+      if (error.status === 404) {
+        console.error("Test does not exist");
+        router.push(`/error`);
+      }
     }
     return null;
   }, [id, router]);
@@ -46,7 +51,7 @@ export default function TestPage() {
   const sendAnswer = useCallback(
     async (answer: boolean): Promise<undefined> => {
       try {
-        await client.post(`/tests/${id}/answer?answer=${answer}`);
+        await client.post(`/tests/${id}/answer`, { answer });
       } catch (error) {
         console.error(error);
         return;
@@ -82,7 +87,7 @@ export default function TestPage() {
   }, [nextCharacter]);
 
   return (
-    <DndProvider backend={TouchBackend} options={{ enableMouseEvents: true }}>
+    <DndProvider backend={HTML5Backend} options={{ enableMouseEvents: true }}>
       <Box className="items-center">{card}</Box>
       <Flex gap={"8"} align={"center"}>
         <Button onClick={sendNo}>no</Button>

@@ -10,3 +10,7 @@ class StartTestResponse(BaseModel):
 class NextCharacterResponse(BaseModel):
     done: bool = False
     character: Hanzi | None = None
+
+
+class AnswerBody(BaseModel):
+    answer: bool

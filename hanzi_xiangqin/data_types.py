@@ -1,5 +1,6 @@
 import re
 from collections import defaultdict
+from functools import cache
 
 from pydantic import BaseModel
 
@@ -32,6 +33,7 @@ def load_dictionary() -> dict[str, list[Definition]]:
     return dictionary
 
 
+@cache
 def load_character_list() -> list[Hanzi]:
     config = get_config()
     dictionary = load_dictionary()

@@ -2,92 +2,122 @@ import asyncio
 import logging
 import signal
 import time
+from typing import Callable
 
 from ..config import get_config
 from ..data_types import load_character_list
-from ..db import TestChannel, TestResults, get_async_redis, pop_test
-from ..testers import TESTERS, Tester
+from ..db import Channel, Test, TestResults
+from ..testers import TESTERS
 
 
 async def run_worker() -> None:
-    logging.info("Starting worker")
-    redis = get_async_redis()
-    shutting_down = False
+    worker = Worker()
 
     def handle_shutdown(*_) -> None:
-        nonlocal shutting_down
         logging.info("Shutting down worker")
-        shutting_down = True
+        worker.shut_down()
 
     signal.signal(signal.SIGTERM, handle_shutdown)
 
-    chars = load_character_list()
-
-    tasks: list[asyncio.Task] = []
-    max_tasks = 100
-
-    task_check_interval = 5
-    heartbeat_interval = 60
-    last_heartbeat = time.time()
-    last_task_check = time.time()
-
-    while not shutting_down:
-        test = await pop_test(redis)
-        if test:
-            channel = TestChannel(redis, test.test_id)
-            if len(tasks) <= max_tasks:
-                tester = TESTERS[test.test_type]
-                tasks.append(asyncio.create_task(run_test(channel, tester(chars))))
-            else:
-                logging.warning("Too many tasks, cancelling test")
-                await channel.end()
-            continue
-
-        await asyncio.sleep(0.2)
-
-        if time.time() - last_heartbeat > heartbeat_interval:
-            logging.info("Worker heartbeat")
-            last_heartbeat = time.time()
-
-        if time.time() - last_task_check > task_check_interval:
-            tasks = [task for task in tasks if not task.done()]
-            last_task_check = time.time()
-
-    for task in tasks:
-        task.cancel()
-
-    await asyncio.gather(*tasks)
+    await worker.run()
 
 
-async def run_test(channel: TestChannel, tester: Tester) -> None:
-    test = tester.characters()
-    for character in test:
-        await channel.put_character(character)
+class Worker:
+    TASK_CLEANUP_INTERVAL = 5
+    HEARTBEAT_INTERVAL = 60
+    POLL_INTERVAL = 0.2
+    TIMER_POLL_INTERVAL = 5
+    MAX_TASKS = 100
 
-        answer = await get_answer(channel)
-        if answer is None:
-            await channel.end()
-            return
-        logging.info("[%s] Got answer: %s", channel.test_id, answer)
+    def __init__(self) -> None:
+        self.channel = Channel()
+        self.shutting_down = False
 
-        try:
-            test.send(answer)
-        except StopIteration:
-            pass
+        self.tasks: list[asyncio.Task] = []
+        self.timer_tasks: list[asyncio.Task] = []
 
-    await channel.end()
-    count = tester.estimate_count()
-    await channel.put_results(TestResults(count=count, breakdown=tester.get_breakdown()))
+    async def run(self) -> None:
+        logging.info("Starting worker")
+
+        self.timer_tasks = [
+            asyncio.create_task(
+                self.timer_task(lambda: logging.info("Worker heartbeat"), self.HEARTBEAT_INTERVAL)
+            ),
+            asyncio.create_task(self.timer_task(self.cleanup_tasks, self.TASK_CLEANUP_INTERVAL)),
+        ]
+
+        while not self.shutting_down:
+            test = await self.channel.pop_test()
+            if test:
+                if len(self.tasks) <= self.MAX_TASKS:
+                    self.tasks.append(asyncio.create_task(Runner(self.channel, test).run_test()))
+                else:
+                    logging.warning("Too many tasks, cancelling new test")
+                    await self.channel.cancel_test(test)
+
+            await asyncio.sleep(self.POLL_INTERVAL)
+
+        for task in self.tasks:
+            task.cancel()
+
+        await asyncio.gather(*self.tasks, *self.timer_tasks)
+
+    async def timer_task(self, task: Callable[[], None], interval: int) -> None:
+        start = time.time()
+        while not self.shutting_down:
+            await asyncio.sleep(self.TIMER_POLL_INTERVAL)
+
+            if time.time() - start > interval:
+                task()
+                start = time.time()
+
+    async def run_test(self, test: Test) -> None: ...
+
+    def shut_down(self) -> None:
+        self.shutting_down = True
+
+    def cleanup_tasks(self) -> None:
+        self.tasks = [task for task in self.tasks if not task.done()]
 
 
-async def get_answer(channel: TestChannel) -> bool | None:
-    config = get_config()
-    start = time.time()
-    while True:
-        answer = await channel.next_answer()
-        if answer is not None:
-            return answer
-        await asyncio.sleep(0.2)
-        if time.time() - start > config.answer_timeout:
-            await channel.end()
-            return None
+class Runner:
+    def __init__(self, channel: Channel, test: Test) -> None:
+        self.channel = channel
+        self.test = test
+
+    async def run_test(self) -> None:
+        logging.info("[%s] Starting test", self.test.test_id)
+        tester = TESTERS[self.test.test_type](load_character_list())
+        characters = tester.characters()
+
+        for character in characters:
+            await self.channel.put_character(self.test, character)
+
+            answer = await self.get_answer()
+            if answer is None:
+                await self.channel.cancel_test(self.test)
+                return
+            logging.info("[%s] Got answer: %s", self.test.test_id, answer)
+
+            try:
+                characters.send(answer)
+            except StopIteration:
+                pass
+
+        count = tester.estimate_count()
+        await self.channel.end_test(
+            self.test, TestResults(count=count, breakdown=tester.get_breakdown())
+        )
+        logging.info("[%s] Completed test: %s", self.test.test_id)
+
+    async def get_answer(self) -> bool | None:
+        config = get_config()
+        start = time.time()
+        while True:
+            answer = await self.channel.next_answer(self.test)
+            if answer is not None:
+                return answer
+            await asyncio.sleep(0.2)
+            if time.time() - start > config.answer_timeout:
+                await self.channel.cancel_test(self.test)
+                return None

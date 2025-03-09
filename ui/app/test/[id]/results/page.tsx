@@ -1,6 +1,7 @@
 import { Text } from "@radix-ui/themes";
 
 import client from "app/tools/client";
+import { redirect } from "next/navigation";
 
 export default async function ResultsPage({
   params,
@@ -10,6 +11,10 @@ export default async function ResultsPage({
   const { id } = await params;
   const response = await client.get(`/tests/${id}/results`);
   const data = response.data;
+
+  if (response.status === 404) {
+    redirect(`/error`);
+  }
 
   return response.status === 200 ? (
     <>
