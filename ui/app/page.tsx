@@ -21,10 +21,8 @@ export default function Home() {
   };
 
   return (
-    <div>
-      <Button size="4" variant="surface" color="jade" onClick={startTest}>
-        Start Test!
-      </Button>
-    </div>
+    <Button size="4" variant="surface" color="jade" onClick={startTest}>
+      Start Test!
+    </Button>
   );
 }

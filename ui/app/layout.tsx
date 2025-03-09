@@ -50,7 +50,7 @@ export default function RootLayout({
                 <Link href="/">相亲</Link>
               </h1>
             </header>
-            <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
+            <main className="flex flex-col gap-8 row-start-2 absolute w-full items-center">
               {children}
             </main>
           </div>

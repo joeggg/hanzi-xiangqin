@@ -1,5 +1,4 @@
 import { Box, Button, Card, Popover, Spinner } from "@radix-ui/themes";
-import { useDrag } from "react-dnd";
 import { yrdzst } from "app/fonts";
 
 interface Character {
@@ -13,17 +12,10 @@ interface Definition {
   pinyin: string;
   text: string;
 }
-export default function HanziCard({ character }: { character?: Character }) {
-  const [collected, drag, dragPreview] = useDrag(() => ({
-    type: "card",
-    item: { id: 0 },
-    collect: (monitor) => ({
-      isDragging: monitor.isDragging(),
-    }),
-  }));
 
+export default function HanziCard({ character }: { character?: Character }) {
   return (
-    <Card ref={drag} style={{ opacity: collected.isDragging ? 0 : 1 }}>
+    <Card>
       {character ? (
         <Box className="text-center space-y-16 p-10">
           <div className={`text-8xl ${yrdzst.className}`}>

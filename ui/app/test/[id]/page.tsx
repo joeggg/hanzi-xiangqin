@@ -3,12 +3,13 @@
 import { useParams, useRouter } from "next/navigation";
 import { JSX, useCallback, useEffect, useState } from "react";
 import { DndProvider } from "react-dnd";
-import { TouchBackend } from "react-dnd-touch-backend";
-import { Box, Button, Flex } from "@radix-ui/themes";
-
-import HanziCard from "app/components/card";
-import client from "app/tools/client";
 import { HTML5Backend } from "react-dnd-html5-backend";
+import { TouchBackend } from "react-dnd-touch-backend";
+
+import HanziCard from "@/app/components/card";
+import Backdrop from "@/app/components/backdrop";
+import client from "@/app/tools/client";
+import { isMobile } from "@/app/tools/misc";
 
 interface Character {
   simplified: string;
@@ -40,9 +41,11 @@ export default function TestPage() {
         router.push(`/test/${id}/results`);
       }
     } catch (error) {
+      // @ts-expect-error no type on code
       if (error.status === 404) {
-        console.error("Test does not exist");
-        router.push(`/error`);
+        router.push(`/error?code=notfound`);
+      } else {
+        router.push(`/error?code=unknown`);
       }
     }
     return null;
@@ -52,9 +55,8 @@ export default function TestPage() {
     async (answer: boolean): Promise<undefined> => {
       try {
         await client.post(`/tests/${id}/answer`, { answer });
-      } catch (error) {
-        console.error(error);
-        return;
+      } catch {
+        router.push(`/error?code=unknown`);
       }
 
       setCard(<HanziCard />);
@@ -64,10 +66,9 @@ export default function TestPage() {
       const character = await nextCharacter();
       if (character) {
         setCard(<HanziCard character={character} />);
-        return;
       }
     },
-    [id, nextCharacter],
+    [id, router, nextCharacter],
   );
 
   const sendYes = useCallback(() => {
@@ -87,12 +88,21 @@ export default function TestPage() {
   }, [nextCharacter]);
 
   return (
-    <DndProvider backend={HTML5Backend} options={{ enableMouseEvents: true }}>
-      <Box className="items-center">{card}</Box>
-      <Flex gap={"8"} align={"center"}>
-        <Button onClick={sendNo}>no</Button>
-        <Button onClick={sendYes}>yes</Button>
-      </Flex>
-    </DndProvider>
+    <>
+      {isMobile() && (
+        <DndProvider backend={TouchBackend}>
+          <Backdrop onNo={sendNo} onYes={sendYes}>
+            {card}
+          </Backdrop>
+        </DndProvider>
+      )}
+      {!isMobile() && (
+        <DndProvider backend={HTML5Backend}>
+          <Backdrop onNo={sendNo} onYes={sendYes}>
+            {card}
+          </Backdrop>
+        </DndProvider>
+      )}
+    </>
   );
 }
