@@ -2,16 +2,17 @@ import { Box, Flex } from "@radix-ui/themes";
 import { useDrag } from "react-dnd";
 import { usePreview } from "react-dnd-preview";
 
-import { isMobile } from "@/app/tools/misc";
 import Bin from "./bin";
 
 export default function Backdrop({
   onYes,
   onNo,
+  isMobile,
   children,
 }: {
   onYes: () => void;
   onNo: () => void;
+  isMobile: boolean;
   children: React.ReactNode;
 }) {
   const [collected, drag] = useDrag(() => ({
@@ -34,7 +35,7 @@ export default function Backdrop({
       >
         {children}
       </Box>
-      {isMobile() && preview.display && (
+      {isMobile && preview.display && (
         // @ts-expect-error ref
         <Box className="items-center" ref={preview.ref} style={preview.style}>
           {children}

@@ -18,7 +18,8 @@
     "react-dnd-html5-backend": "^16.0.1",
     "react-dnd-preview": "^9.0.0",
     "react-dnd-touch-backend": "^16.0.1",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "ua-parser-js": "^2.0.2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
