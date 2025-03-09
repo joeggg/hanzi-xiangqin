@@ -14,17 +14,18 @@ class Channel:
         self.config = get_config()
         self.queue_name = "test_queue"
 
-    async def queue_test(self, data: Test) -> None:
-        await self.redis.lpush(self.queue_name, orjson.dumps(asdict(data)))
+    async def queue_test(self, test: Test) -> None:
+        async with self.redis.pipeline() as pipe:
+            await pipe.setex(test.test_id, self.config.test_timeout, orjson.dumps(asdict(test)))
+            await pipe.lpush(self.queue_name, test.test_id)
+            await pipe.execute()
 
     async def pop_test(self) -> Test | None:
-        result = await self.redis.rpop(self.queue_name)
-        if result is None:
+        test_id = await self.redis.rpop(self.queue_name)
+        if test_id is None:
             return None
 
-        data = Test(**orjson.loads(result))
-        await self.redis.setex(data.test_id, self.config.test_timeout, result)
-        return data
+        return await self.test_by_id(test_id)
 
     async def test_by_id(self, test_id: str) -> Test:
         result = await self.redis.get(test_id)

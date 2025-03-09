@@ -6,8 +6,8 @@ from typing import Callable
 
 from ..config import get_config
 from ..data_types import load_character_list
-from ..db import Channel, Test, TestResults
-from ..testers import TESTERS
+from ..db import Channel, Test, TestNotFound, TestResults
+from ..testers import TESTERS, Tester
 
 
 async def run_worker() -> None:
@@ -47,13 +47,22 @@ class Worker:
         ]
 
         while not self.shutting_down:
-            test = await self.channel.pop_test()
-            if test:
-                if len(self.tasks) <= self.MAX_TASKS:
-                    self.tasks.append(asyncio.create_task(Runner(self.channel, test).run_test()))
-                else:
-                    logging.warning("Too many tasks, cancelling new test")
-                    await self.channel.cancel_test(test)
+            try:
+                test = await self.channel.pop_test()
+                if test:
+                    if len(self.tasks) <= self.MAX_TASKS:
+                        self.tasks.append(
+                            asyncio.create_task(TestRunner(self.channel, test).run_test())
+                        )
+                    else:
+                        logging.warning("Too many tasks, cancelling new test")
+                        await self.channel.cancel_test(test)
+
+            except TestNotFound:
+                pass
+
+            except Exception:
+                logging.exception("An unexpected error occurred in worker")
 
             await asyncio.sleep(self.POLL_INTERVAL)
 
@@ -71,8 +80,6 @@ class Worker:
                 task()
                 start = time.time()
 
-    async def run_test(self, test: Test) -> None: ...
-
     def shut_down(self) -> None:
         self.shutting_down = True
 
@@ -80,35 +87,43 @@ class Worker:
         self.tasks = [task for task in self.tasks if not task.done()]
 
 
-class Runner:
+class TestRunner:
     def __init__(self, channel: Channel, test: Test) -> None:
         self.channel = channel
         self.test = test
 
     async def run_test(self) -> None:
         logging.info("[%s] Starting test", self.test.test_id)
-        tester = TESTERS[self.test.test_type](load_character_list())
+        tester: Tester = TESTERS[self.test.test_type](load_character_list())
         characters = tester.characters()
 
-        for character in characters:
-            await self.channel.put_character(self.test, character)
+        try:
+            for character in characters:
+                await self.channel.put_character(self.test, character)
 
-            answer = await self.get_answer()
-            if answer is None:
-                await self.channel.cancel_test(self.test)
-                return
-            logging.info("[%s] Got answer: %s", self.test.test_id, answer)
+                answer = await self.get_answer()
+                if answer is None:
+                    await self.channel.cancel_test(self.test)
+                    return
+                logging.info("[%s] Got answer: %s", self.test.test_id, answer)
 
-            try:
-                characters.send(answer)
-            except StopIteration:
-                pass
+                try:
+                    characters.send(answer)
+                except StopIteration:
+                    pass
 
-        count = tester.estimate_count()
-        await self.channel.end_test(
-            self.test, TestResults(count=count, breakdown=tester.get_breakdown())
-        )
-        logging.info("[%s] Completed test: %s", self.test.test_id)
+            await self.channel.end_test(
+                self.test,
+                TestResults(
+                    count=tester.estimate_count(),
+                    breakdown=tester.get_breakdown(),
+                ),
+            )
+            logging.info("[%s] Completed test: %s", self.test.test_id)
+
+        except Exception:
+            logging.exception("[%s] An unexpected error occurred in test", self.test.test_id)
+            await self.channel.cancel_test(self.test)
 
     async def get_answer(self) -> bool | None:
         config = get_config()
@@ -117,7 +132,9 @@ class Runner:
             answer = await self.channel.next_answer(self.test)
             if answer is not None:
                 return answer
+
             await asyncio.sleep(0.2)
+
             if time.time() - start > config.answer_timeout:
                 await self.channel.cancel_test(self.test)
                 return None
