@@ -29,7 +29,7 @@ export default function Backdrop({
 
   return (
     <Flex width={"100%"}>
-      <Bin content="No" colour_class="bg-red-200" onDrop={onNo} />
+      <Bin content="No" className="bg-red-200 rounded-r-4xl" onDrop={onNo} />
       <Box
         // @ts-expect-error ref
         ref={drag}
@@ -38,12 +38,20 @@ export default function Backdrop({
         {children}
       </Box>
       {isMobile && preview.display && (
-        // @ts-expect-error ref
-        <Box className="items-center" ref={preview.ref} style={preview.style}>
+        <Box
+          className="items-center"
+          // @ts-expect-error ref
+          ref={preview.ref}
+          style={{ ...preview.style, opacity: 0.9 }}
+        >
           {children}
         </Box>
       )}
-      <Bin content="Yes" colour_class="bg-green-200" onDrop={onYes} />
+      <Bin
+        content="Yes"
+        className="bg-green-200 rounded-l-4xl"
+        onDrop={onYes}
+      />
     </Flex>
   );
 }

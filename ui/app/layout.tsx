@@ -39,8 +39,8 @@ export default async function RootLayout({
         {/* @ts-expect-error theme is light or dark */}
         <Theme appearance={theme.value}>
           <div
-            className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center p-8 pb-20
-            gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]"
+            className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center p-20 pb-20
+            gap-16 font-[family-name:var(--font-geist-sans)]"
             style={{ minHeight: "90vh" }}
           >
             <Header />

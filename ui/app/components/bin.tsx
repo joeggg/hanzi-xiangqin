@@ -6,11 +6,11 @@ import { useDrop } from "react-dnd";
 
 export default function Bin({
   content,
-  colour_class,
+  className,
   onDrop,
 }: {
   content: string;
-  colour_class: string;
+  className?: string;
   onDrop: () => void;
 }) {
   const [collected, noDrop] = useDrop(() => ({
@@ -24,9 +24,9 @@ export default function Bin({
       // @ts-expect-error ref
       ref={noDrop}
       width={"50%"}
-      className={`${colour_class} text-black text-4xl text-center`}
+      className={`${className} text-black text-4xl text-center content-center`}
       content="center"
-      style={{ opacity: collected.isOver ? 0.5 : 0 }}
+      style={{ opacity: collected.isOver ? 0.3 : 0 }}
     >
       <strong>{content}</strong>
     </Box>

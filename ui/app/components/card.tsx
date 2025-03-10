@@ -6,16 +6,20 @@ import type { Character } from "@/app/types/character";
 export default function HanziCard({ character }: { character?: Character }) {
   return (
     <Card>
-      {character ? (
-        <Box className="text-center space-y-16 p-10">
+      <Box className="text-center space-y-16 p-10">
+        {character ? (
           <div className={`text-8xl ${yrdzst.className}`}>
             {character.simplified}
           </div>
-          <Popover.Root>
-            <Popover.Trigger>
-              <Button variant="soft">Definition</Button>
-            </Popover.Trigger>
-            <Popover.Content align="center" maxWidth="300px">
+        ) : (
+          <Spinner className="p-12" />
+        )}
+        <Popover.Root>
+          <Popover.Trigger>
+            <Button variant="soft">Definition</Button>
+          </Popover.Trigger>
+          <Popover.Content align="center" maxWidth="300px">
+            {character && (
               <Box>
                 {character.definitions.length > 0 ? (
                   character.definitions.map((def, index) => (
@@ -27,14 +31,10 @@ export default function HanziCard({ character }: { character?: Character }) {
                   <div>Unable to find definition :(</div>
                 )}
               </Box>
-            </Popover.Content>
-          </Popover.Root>
-        </Box>
-      ) : (
-        <Box>
-          <Spinner />
-        </Box>
-      )}
+            )}
+          </Popover.Content>
+        </Popover.Root>
+      </Box>
     </Card>
   );
 }
