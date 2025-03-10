@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import { cookies } from "next/headers";
 import { Theme } from "@radix-ui/themes";
 import "@radix-ui/themes/styles.css";
-import Image from "next/image";
-import Link from "next/link";
-import localFont from "next/font/local";
 
-const yrdzst = localFont({ src: "./fonts/yrdzst_regular.ttf" });
+import Header from "./components/header";
+import Footer from "./components/footer";
+import "./globals.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,57 +23,32 @@ export const metadata: Metadata = {
   description: "Test your knowledge of Chinese characters",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookiesStore = await cookies();
+  const theme = cookiesStore.get("theme") || { value: "light" };
+
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased h-full`}
       >
-        <Theme>
+        {/* @ts-expect-error theme is light or dark */}
+        <Theme appearance={theme.value}>
           <div
             className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center p-8 pb-20
             gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]"
             style={{ minHeight: "90vh" }}
           >
-            <header
-              className={`row-start-1 flex gap-16 items-center ${yrdzst.className} text-4xl font-bold`}
-            >
-              <h1 className="">
-                <Link href="/">hanzi</Link>
-                <br />
-                <Link href="/">xiangqin</Link>
-              </h1>
-              <h1 className="text-justify">
-                <Link href="/">汉字</Link>
-                <br />
-                <Link href="/">相亲</Link>
-              </h1>
-            </header>
+            <Header />
             <main className="flex flex-col gap-8 row-start-2 absolute w-full items-center">
               {children}
             </main>
           </div>
-          <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-            <a
-              className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-              href="https://github.com/joeggg/hanzi-xiangqin"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Image
-                aria-hidden
-                src="/file.svg"
-                alt="File icon"
-                width={16}
-                height={16}
-              />
-              View Source
-            </a>
-          </footer>
+          <Footer />
         </Theme>
       </body>
     </html>

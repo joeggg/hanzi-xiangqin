@@ -1,17 +1,7 @@
 import { Box, Button, Card, Popover, Spinner } from "@radix-ui/themes";
 import { yrdzst } from "app/fonts";
 
-interface Character {
-  simplified: string;
-  traditional: string;
-  rank: number;
-  definitions: Definition[];
-}
-
-interface Definition {
-  pinyin: string;
-  text: string;
-}
+import type { Character } from "@/app/types/character";
 
 export default function HanziCard({ character }: { character?: Character }) {
   return (

@@ -1,3 +1,5 @@
+"use client";
+
 import { Box, Flex } from "@radix-ui/themes";
 import { useDrag } from "react-dnd";
 import { usePreview } from "react-dnd-preview";

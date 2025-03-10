@@ -7,20 +7,9 @@ import { TouchBackend } from "react-dnd-touch-backend";
 import { useRouter } from "next/navigation";
 
 import client from "@/app/tools/client";
+import { Character } from "@/app/types/character";
 import Backdrop from "./backdrop";
 import HanziCard from "./card";
-
-interface Character {
-  simplified: string;
-  traditional: string;
-  rank: number;
-  definitions: Definition[];
-}
-
-interface Definition {
-  pinyin: string;
-  text: string;
-}
 
 export default function TestBed({ id, isMb }: { id: string; isMb: boolean }) {
   const router = useRouter();
