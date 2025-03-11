@@ -1,17 +1,23 @@
 "use client";
 
 import { Box, Flex, RadioCards, Text } from "@radix-ui/themes";
+import { getCookie, setCookie } from "cookies-next";
+import { NextFont } from "next/dist/compiled/@next/font";
+import { useMemo } from "react";
 
 import { ebas, fontquan, geistMono, tegakizatsu, yrdzst } from ".";
-import { setCookie } from "cookies-next";
-import { NextFont } from "next/dist/compiled/@next/font";
 
 const fonts = [yrdzst, tegakizatsu, ebas, fontquan, geistMono];
 
 export default function Fonts() {
   const changeFont = (font: NextFont) => {
-    setCookie("theme", font.className);
+    setCookie("font", font.className);
   };
+
+  const currentFont = useMemo(
+    () => (getCookie("font") as string) || yrdzst.className,
+    [],
+  );
 
   return (
     <Box>
@@ -19,11 +25,14 @@ export default function Fonts() {
         Please select a font:
       </Text>
       <Box maxWidth="600px">
-        <RadioCards.Root defaultValue="1" columns={{ initial: "1", sm: "3" }}>
+        <RadioCards.Root
+          defaultValue={currentFont}
+          columns={{ initial: "1", sm: "3" }}
+        >
           {fonts.map((font, index) => (
             <RadioCards.Item
               key={index}
-              value={index.toString()}
+              value={font.className}
               onClick={() => changeFont(font)}
             >
               <Flex direction="column" width="100%">
@@ -31,7 +40,7 @@ export default function Fonts() {
                   汉字相亲
                 </Text>
                 <Text size={"2"} align={"center"}>
-                  {font.style.fontFamily.split(",")[0]}
+                  {font.style.fontFamily.split(",")[0].replaceAll("'", "")}
                 </Text>
               </Flex>
             </RadioCards.Item>

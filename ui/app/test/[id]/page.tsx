@@ -1,7 +1,10 @@
-import TestBed from "@/app/components/testbed";
-import { isMobile } from "@/app/tools/misc";
 import { Flex } from "@radix-ui/themes";
 import Image from "next/image";
+
+import TestBed from "@/app/components/testbed";
+import { yrdzst } from "@/app/fonts";
+import { isMobile } from "@/app/tools/misc";
+import { cookies } from "next/headers";
 
 export default async function TestPage({
   params,
@@ -10,10 +13,12 @@ export default async function TestPage({
 }) {
   const { id } = await params;
   const isMb = await isMobile();
+  const cookiesStore = await cookies();
+  const font = cookiesStore.get("font")?.value || yrdzst.className;
 
   return (
     <>
-      <TestBed id={id} isMb={isMb} />
+      <TestBed id={id} isMb={isMb} font={font} />
       <Flex className="gap-20 justify-center opacity-50">
         <Flex className="gap-2 items-center text-2xl">
           <Image

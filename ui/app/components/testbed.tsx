@@ -1,24 +1,26 @@
 "use client";
 
-import { JSX, useCallback, useEffect, useMemo, useState } from "react";
+import { JSX, useCallback, useEffect, useState } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { TouchBackend } from "react-dnd-touch-backend";
 import { useRouter } from "next/navigation";
 
-import { yrdzst } from "@/app/fonts";
 import client from "@/app/tools/client";
 import { Character } from "@/app/types/character";
 import Backdrop from "./backdrop";
 import HanziCard from "./card";
-import { getCookie } from "cookies-next";
 
-export default function TestBed({ id, isMb }: { id: string; isMb: boolean }) {
+export default function TestBed({
+  id,
+  isMb,
+  font,
+}: {
+  id: string;
+  isMb: boolean;
+  font: string;
+}) {
   const router = useRouter();
-  const font = useMemo(
-    () => (getCookie("font") as string) || yrdzst.className,
-    [],
-  );
 
   const [card, setCard] = useState<JSX.Element>(<HanziCard font={font} />);
 
