@@ -14,6 +14,10 @@ export default function SettingsMenu() {
     router.refresh();
   };
 
+  const goToFonts = () => {
+    router.push("/fonts");
+  };
+
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger>
@@ -27,6 +31,7 @@ export default function SettingsMenu() {
           Toggle theme
         </DropdownMenu.Item>
         <DropdownMenu.Separator />
+        <DropdownMenu.Item onClick={goToFonts}>Choose font</DropdownMenu.Item>
       </DropdownMenu.Content>
     </DropdownMenu.Root>
   );

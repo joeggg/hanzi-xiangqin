@@ -1,22 +1,12 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import { cookies } from "next/headers";
 import { Theme } from "@radix-ui/themes";
 import "@radix-ui/themes/styles.css";
 
 import Header from "./components/header";
 import Footer from "./components/footer";
+import { geistSans, geistMono } from "./fonts";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "Hanzi Xiangqin",
@@ -40,8 +30,7 @@ export default async function RootLayout({
         <Theme appearance={theme.value}>
           <div
             className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center p-20 pb-20
-            gap-16 font-[family-name:var(--font-geist-sans)]"
-            style={{ minHeight: "90vh" }}
+            gap-16 font-[family-name:var(--font-geist-sans)] min-h-screen"
           >
             <Header />
             <main className="flex flex-col gap-8 row-start-2 absolute w-full items-center">

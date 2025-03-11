@@ -1,20 +1,26 @@
 "use client";
 
-import { JSX, useCallback, useEffect, useState } from "react";
+import { JSX, useCallback, useEffect, useMemo, useState } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { TouchBackend } from "react-dnd-touch-backend";
 import { useRouter } from "next/navigation";
 
+import { yrdzst } from "@/app/fonts";
 import client from "@/app/tools/client";
 import { Character } from "@/app/types/character";
 import Backdrop from "./backdrop";
 import HanziCard from "./card";
+import { getCookie } from "cookies-next";
 
 export default function TestBed({ id, isMb }: { id: string; isMb: boolean }) {
   const router = useRouter();
+  const font = useMemo(
+    () => (getCookie("font") as string) || yrdzst.className,
+    [],
+  );
 
-  const [card, setCard] = useState<JSX.Element>(<HanziCard />);
+  const [card, setCard] = useState<JSX.Element>(<HanziCard font={font} />);
 
   const nextCharacter = useCallback(async (): Promise<Character | null> => {
     try {
@@ -46,16 +52,16 @@ export default function TestBed({ id, isMb }: { id: string; isMb: boolean }) {
         router.push(`/error?code=unknown`);
       }
 
-      setCard(<HanziCard />);
+      setCard(<HanziCard font={font} />);
 
       // Small delay to wait for processing
       await new Promise((resolve) => setTimeout(resolve, 100));
       const character = await nextCharacter();
       if (character) {
-        setCard(<HanziCard character={character} />);
+        setCard(<HanziCard character={character} font={font} />);
       }
     },
-    [id, router, nextCharacter],
+    [id, router, nextCharacter, font],
   );
 
   const sendYes = useCallback(() => {
@@ -69,10 +75,10 @@ export default function TestBed({ id, isMb }: { id: string; isMb: boolean }) {
   useEffect(() => {
     nextCharacter().then((character) => {
       if (character) {
-        setCard(<HanziCard character={character} />);
+        setCard(<HanziCard character={character} font={font} />);
       }
     });
-  }, [nextCharacter]);
+  }, [nextCharacter, font]);
 
   return (
     <>

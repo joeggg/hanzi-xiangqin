@@ -14,7 +14,7 @@ export default async function TestPage({
   return (
     <>
       <TestBed id={id} isMb={isMb} />
-      <Flex className="gap-20 justify-center">
+      <Flex className="gap-20 justify-center opacity-50">
         <Flex className="gap-2 items-center text-2xl">
           <Image
             src="/arrow-left.svg"

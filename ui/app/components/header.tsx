@@ -11,14 +11,14 @@ export default async function Header() {
   return (
     <header
       className={`row-start-1 flex justify-${justify} items-center ${yrdzst.className} text-4xl 
-font-bold w-full`}
+font-bold w-full gap-4`}
     >
       {!isMb ? (
         <div className="flex-1 flex justify-start">
           <SettingsMenu />
         </div>
       ) : null}
-      <div className="flex gap-16">
+      <div className="flex gap-4">
         <h1 className="">
           <Link href="/">hanzi</Link>
           <br />

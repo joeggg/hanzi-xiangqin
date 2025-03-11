@@ -9,7 +9,8 @@ export default async function Footer() {
 
   return (
     <footer
-      className={`row-start-3 flex gap-6 flex-wrap items-center justify-${justify}`}
+      className={`row-start-3 flex gap-6 flex-wrap items-center justify-${justify} bottom-0 
+absolute h-24 w-full`}
     >
       {isMb ? (
         <div className="flex-1 p-2">
