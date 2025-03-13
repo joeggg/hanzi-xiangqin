@@ -1,5 +1,6 @@
 import uuid
 from dataclasses import dataclass, field
+from enum import StrEnum
 from functools import cached_property
 
 from ..testers import TestType
@@ -9,6 +10,12 @@ class TestDone(Exception): ...
 
 
 class TestNotFound(Exception): ...
+
+
+class TestStatus(StrEnum):
+    PENDING = "pending"
+    IN_PROGRESS = "in_progress"
+    DONE = "done"
 
 
 @dataclass

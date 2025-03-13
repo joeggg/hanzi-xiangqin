@@ -13,6 +13,14 @@ services:
         - path: ./hanzi_xiangqin
           action: sync
           target: /app/hanzi_xiangqin
+
+  setup:
+    image: hx-api:latest
+    command: [ ".venv/bin/python", "-m", "hanzi_xiangqin", "setup" ]
+    build:
+      context: .
+      dockerfile: ./docker/api.Dockerfile
+
   worker:
     image: hx-worker:latest
     build:
@@ -23,6 +31,7 @@ services:
         - path: ./hanzi_xiangqin
           action: sync+restart
           target: /app/hanzi_xiangqin
+
   ui:
     image: hx-ui:latest
     build:
@@ -38,5 +47,14 @@ services:
           target: /app
           ignore:
             - node_modules
+
   redis:
     image: "redis:latest"
+
+  db:
+    image: "postgres:latest"
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+      POSTGRES_DB: "hx"
+
