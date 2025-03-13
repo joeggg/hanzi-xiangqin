@@ -42,11 +42,17 @@ async def get_next_character(
 async def post_answer(
     channel: Annotated[Channel, Depends(channel)], test_id: str, answer: AnswerBody
 ) -> None:
-    await channel.put_answer(test_id, answer.answer)
+    try:
+        await channel.put_answer(test_id, answer.answer)
+    except TestNotFound:
+        raise HTTPException(404, "Test not found")
 
 
 @router.get("/{test_id}/results")
 async def get_results(channel: Annotated[Channel, Depends(channel)], test_id: str) -> TestResults:
-    if results := await channel.get_results(test_id):
-        return results
-    raise HTTPException(404, "Results not found")
+    try:
+        if results := await channel.get_results(test_id):
+            return results
+        raise HTTPException(404, "Results not found")
+    except TestNotFound:
+        raise HTTPException(404, "Results not found")
