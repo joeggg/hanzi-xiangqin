@@ -4,7 +4,14 @@ FROM base AS deps
 
 WORKDIR /app
 
-COPY package.json package-lock.json next.config.ts postcss.config.mjs .env tsconfig.json ./
+COPY package.json \
+  package-lock.json \
+  next.config.ts \
+  next-env.d.ts \
+  postcss.config.mjs \
+  .env \
+  tsconfig.json \
+  ./
 RUN npm install
 
 COPY --chown=ui public ./public
@@ -13,6 +20,7 @@ COPY --chown=ui app ./app
 # Build stage
 FROM deps AS builder
 
+RUN npx next telemetry disable
 RUN npm run build
 
 # Production stage

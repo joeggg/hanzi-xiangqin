@@ -6,12 +6,12 @@ import SettingsMenu from "./menu";
 
 export default async function Header() {
   const isMb = await isMobile();
-  const justify = isMb ? "center" : "between";
+  const justify = isMb ? "center" : "space-between";
 
   return (
     <header
-      className={`row-start-1 flex justify-${justify} items-center ${yrdzst.className} text-4xl 
-font-bold w-full gap-4`}
+      className={`row-start-1 flex items-center ${yrdzst.className} text-4xl font-bold w-full gap-4`}
+      style={{ justifyContent: justify }}
     >
       {!isMb ? (
         <div className="flex-1 flex justify-start">

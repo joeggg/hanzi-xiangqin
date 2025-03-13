@@ -33,7 +33,7 @@ export default async function RootLayout({
             gap-16 font-[family-name:var(--font-geist-sans)] min-h-screen"
           >
             <Header />
-            <main className="flex flex-col gap-8 row-start-2 absolute w-full items-center">
+            <main className="flex flex-col gap-8 row-start-2 absolute w-full items-center h-1/2">
               {children}
             </main>
           </div>

@@ -5,12 +5,12 @@ import SettingsMenu from "./menu";
 
 export default async function Footer() {
   const isMb = await isMobile();
-  const justify = isMb ? "between" : "center";
+  const justify = isMb ? "space-between" : "center";
 
   return (
     <footer
-      className={`row-start-3 flex gap-6 flex-wrap items-center justify-${justify} bottom-0 
-absolute h-24 w-full`}
+      className="row-start-3 flex gap-6 flex-wrap items-center bottom-0 absolute h-24 w-full"
+      style={{ justifyContent: justify }}
     >
       {isMb ? (
         <div className="flex-1 p-2">
