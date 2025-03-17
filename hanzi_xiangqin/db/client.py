@@ -5,39 +5,50 @@ from redis.asyncio import Redis
 from sqlalchemy import Engine, NullPool, create_engine
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
+from ..config import get_config
 
-class DbConfig(BaseSettings):
-    username: str = "postgres"
-    password: str = "postgres"
-    host: str = "db"
-    port: int = 5432
-    database: str = "hx"
+
+class PostgresConfig(BaseSettings):
+    pguser: str = ""
+    pgpassword: str = ""
+    root_pgpassword: str = ""
+    pghost: str = "localhost"
+    pgport: int = 5432
+    pgdatabase: str = ""
 
 
 @cache
 def get_async_redis() -> Redis:
-    return Redis(host="redis", max_connections=20, decode_responses=True)
+    config = get_config()
+    return Redis(host="redis", max_connections=config.redis_pool_size, decode_responses=True)
 
 
 @cache
 def get_engine() -> Engine:
-    return create_engine(get_db_url(), pool_size=20)
+    config = get_config()
+    return create_engine(get_db_url(), pool_size=config.pg_pool_size)
 
 
 @cache
 def get_async_engine() -> AsyncEngine:
-    return create_async_engine(get_db_url(), pool_size=20)
+    config = get_config()
+    return create_async_engine(get_db_url(), pool_size=config.pg_pool_size)
 
 
-@cache
-def get_setup_engine() -> Engine:
-    return create_engine(get_db_url(), poolclass=NullPool, isolation_level="AUTOCOMMIT")
+def get_setup_engine(postgres_db: bool) -> Engine:
+    return create_engine(
+        get_db_url(root=True, postgres_db=postgres_db),
+        poolclass=NullPool,
+        isolation_level="AUTOCOMMIT",
+    )
 
 
-@cache
-def get_db_url() -> str:
-    config = DbConfig()
-    return (
-        f"postgresql+psycopg://{config.username}:{config.password}@{config.host}:{config.port}"
-        f"/{config.database}"
+def get_db_url(root: bool = False, postgres_db: bool = False) -> str:
+    config = PostgresConfig()
+    return "postgresql+psycopg://{}:{}@{}:{}/{}".format(
+        "postgres" if root else config.pguser,
+        config.root_pgpassword if root else config.pgpassword,
+        config.pghost,
+        config.pgport,
+        "postgres" if postgres_db else config.pgdatabase,
     )

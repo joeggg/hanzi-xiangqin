@@ -18,6 +18,7 @@ class Base(MappedAsDataclass, DeclarativeBase):
 
 class Test(Base):
     __tablename__ = "tests"
+    __table_args__ = {"schema": "main"}  # noqa: RUF012
 
     test_id: Mapped[int] = mapped_column(
         BigInteger, primary_key=True, autoincrement=True, init=False

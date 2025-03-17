@@ -2,9 +2,7 @@ from typing import AsyncIterator, Iterator
 
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncSession
 
-from hanzi_xiangqin.db.setup import get_async_engine
-
-from ..db import Channel
+from ..db import Channel, get_async_engine
 
 
 def channel() -> Iterator[Channel]:

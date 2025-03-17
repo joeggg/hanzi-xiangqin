@@ -4,8 +4,8 @@ import orjson
 
 from ..config import get_config
 from ..data_types import Hanzi
+from .client import get_async_redis
 from .data_types import Test, TestDone, TestNotFound, TestResults
-from .setup import get_async_redis
 
 
 class Channel:

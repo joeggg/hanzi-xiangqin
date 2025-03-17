@@ -7,7 +7,12 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DEV=true
+      DEV: ${DEV}
+      PGUSER: ${PGUSER}
+      PGPASSWORD: ${PGPASSWORD}
+      PGHOST: ${PGHOST}
+      PGDATABASE: ${PGDATABASE}
+
     develop:
       watch:
         - path: ./hanzi_xiangqin
@@ -20,6 +25,12 @@ services:
     build:
       context: .
       dockerfile: ./docker/api.Dockerfile
+    environment:
+      PGUSER: ${PGUSER}
+      PGPASSWORD: ${PGPASSWORD}
+      ROOT_PGPASSWORD: ${ROOT_PGPASSWORD}
+      PGHOST: ${PGHOST}
+      PGDATABASE: ${PGDATABASE}
 
   worker:
     image: hx-worker:latest
@@ -54,7 +65,7 @@ services:
   db:
     image: "postgres:latest"
     environment:
-      POSTGRES_USER: "postgres"
-      POSTGRES_PASSWORD: "postgres"
-      POSTGRES_DB: "hx"
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${ROOT_PGPASSWORD}
+      POSTGRES_DB: postgres
 
