@@ -11,7 +11,7 @@ from .data_types import TestStatus
 
 class Base(MappedAsDataclass, DeclarativeBase):
     type_annotation_map: ClassVar[dict] = {
-        datetime: postgresql.TIMESTAMP,
+        datetime: postgresql.TIMESTAMP(timezone=True),
         dict: postgresql.JSONB,
     }
 
