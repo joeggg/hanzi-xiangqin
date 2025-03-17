@@ -10,7 +10,7 @@ export default function Home() {
 
   const startTest = async () => {
     try {
-      const response = await client.get(`/tests/start`);
+      const response = await client.post(`/tests/start`);
       const data = await response.data;
       if (data.test_id) {
         router.push(`/test/${data.test_id}`);

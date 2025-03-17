@@ -12,7 +12,6 @@ services:
       PGPASSWORD: ${PGPASSWORD}
       PGHOST: ${PGHOST}
       PGDATABASE: ${PGDATABASE}
-
     develop:
       watch:
         - path: ./hanzi_xiangqin
@@ -37,6 +36,11 @@ services:
     build:
       context: .
       dockerfile: ./docker/worker.Dockerfile
+    environment:
+      PGUSER: ${PGUSER}
+      PGPASSWORD: ${PGPASSWORD}
+      PGHOST: ${PGHOST}
+      PGDATABASE: ${PGDATABASE}
     develop:
       watch:
         - path: ./hanzi_xiangqin

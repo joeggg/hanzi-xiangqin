@@ -10,8 +10,13 @@ def channel() -> Iterator[Channel]:
 
 
 async def db_session() -> AsyncIterator[AsyncSession]:
-    async with AsyncSession(get_async_engine()) as session:
-        yield session
+    async with AsyncSession(get_async_engine(), expire_on_commit=False) as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception as exc:
+            await session.rollback()
+            raise exc
 
 
 async def db_connection() -> AsyncIterator[AsyncConnection]:
