@@ -2,12 +2,14 @@ import asyncio
 import logging
 import signal
 import time
+from dataclasses import dataclass
 from typing import Callable
 
 from ..config import get_config
 from ..data_types import load_character_list
-from ..db import Channel, Test, TestNotFound, TestResults
+from ..db import Channel, TestResults
 from ..testers import TESTERS, Tester
+from .queries import delete_test, set_test_errored, set_test_in_progress, update_test_results
 
 
 async def run_worker() -> None:
@@ -22,6 +24,12 @@ async def run_worker() -> None:
     await worker.run()
 
 
+@dataclass
+class Job:
+    test_id: int
+    task: asyncio.Task
+
+
 class Worker:
     TASK_CLEANUP_INTERVAL = 5
     HEARTBEAT_INTERVAL = 60
@@ -33,7 +41,7 @@ class Worker:
         self.channel = Channel()
         self.shutting_down = False
 
-        self.tasks: list[asyncio.Task] = []
+        self.jobs: list[Job] = []
         self.timer_tasks: list[asyncio.Task] = []
 
     async def run(self) -> None:
@@ -47,29 +55,38 @@ class Worker:
         ]
 
         while not self.shutting_down:
+            await asyncio.sleep(self.POLL_INTERVAL)
+
             try:
                 test = await self.channel.pop_test()
-                if test:
-                    if len(self.tasks) <= self.MAX_TASKS:
-                        self.tasks.append(
-                            asyncio.create_task(TestRunner(self.channel, test).run_test())
-                        )
-                    else:
-                        logging.warning("Too many tasks, cancelling new test")
-                        await self.channel.cancel_test(test)
+                if not test:
+                    continue
 
-            except TestNotFound:
-                pass
+                if len(self.jobs) > self.MAX_TASKS:
+                    logging.warning("Too many tasks, cancelling new test")
+                    await delete_test(test.test_id)
+                    continue
+
+                tester = TESTERS[test.test_type](load_character_list())
+                self.jobs.append(
+                    Job(
+                        test.test_id,
+                        asyncio.create_task(run_test(self.channel, tester, test.test_id)),
+                    )
+                )
 
             except Exception:
                 logging.exception("An unexpected error occurred in worker")
 
-            await asyncio.sleep(self.POLL_INTERVAL)
+        for job in self.jobs:
+            job.task.cancel()
+            try:
+                await job.task
+            except asyncio.CancelledError:
+                logging.error("Test %s was cancelled!", job.test_id)
+                await set_test_errored(job.test_id)
 
-        for task in self.tasks:
-            task.cancel()
-
-        await asyncio.gather(*self.tasks, *self.timer_tasks)
+        await asyncio.gather(*self.timer_tasks)
 
     async def timer_task(self, task: Callable[[], None], interval: int) -> None:
         start = time.time()
@@ -84,57 +101,48 @@ class Worker:
         self.shutting_down = True
 
     def cleanup_tasks(self) -> None:
-        self.tasks = [task for task in self.tasks if not task.done()]
+        self.jobs = [job for job in self.jobs if not job.task.done()]
 
 
-class TestRunner:
-    def __init__(self, channel: Channel, test: Test) -> None:
-        self.channel = channel
-        self.test = test
+async def run_test(channel: Channel, tester: Tester, test_id: int) -> None:
+    logging.info("[%s] Starting test", test_id)
+    await set_test_in_progress(test_id)
+    characters = tester.characters()
 
-    async def run_test(self) -> None:
-        logging.info("[%s] Starting test", self.test.test_id)
-        tester: Tester = TESTERS[self.test.test_type](load_character_list())
-        characters = tester.characters()
+    try:
+        for character in characters:
+            await channel.put_character(test_id, character)
 
-        try:
-            for character in characters:
-                await self.channel.put_character(self.test, character)
+            answer = await get_answer(channel, test_id)
+            if answer is None:
+                await delete_test(test_id)
+                return
+            logging.info("[%s] Got answer: %s", test_id, answer)
 
-                answer = await self.get_answer()
-                if answer is None:
-                    await self.channel.cancel_test(self.test)
-                    return
-                logging.info("[%s] Got answer: %s", self.test.test_id, answer)
+            try:
+                characters.send(answer)
+            except StopIteration:
+                pass
 
-                try:
-                    characters.send(answer)
-                except StopIteration:
-                    pass
+        await update_test_results(
+            test_id, TestResults(count=tester.estimate_count(), breakdown=tester.get_breakdown())
+        )
+        logging.info("[%s] Completed test", test_id)
 
-            await self.channel.end_test(
-                self.test,
-                TestResults(
-                    count=tester.estimate_count(),
-                    breakdown=tester.get_breakdown(),
-                ),
-            )
-            logging.info("[%s] Completed test: %s", self.test.test_id)
+    except Exception:
+        logging.exception("[%s] An unexpected error occurred in test", test_id)
+        await set_test_errored(test_id)
 
-        except Exception:
-            logging.exception("[%s] An unexpected error occurred in test", self.test.test_id)
-            await self.channel.cancel_test(self.test)
 
-    async def get_answer(self) -> bool | None:
-        config = get_config()
-        start = time.time()
-        while True:
-            answer = await self.channel.next_answer(self.test)
-            if answer is not None:
-                return answer
+async def get_answer(channel: Channel, test_id: int) -> bool | None:
+    config = get_config()
+    start = time.time()
+    while True:
+        answer = await channel.next_answer(test_id)
+        if answer is not None:
+            return answer
 
-            await asyncio.sleep(0.2)
+        await asyncio.sleep(0.2)
 
-            if time.time() - start > config.answer_timeout:
-                await self.channel.cancel_test(self.test)
-                return None
+        if time.time() - start > config.test_inactivity_timeout:
+            return None

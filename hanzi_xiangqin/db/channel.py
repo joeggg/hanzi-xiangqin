@@ -1,11 +1,18 @@
-from dataclasses import asdict
+from dataclasses import asdict, dataclass
 
 import orjson
 
+from hanzi_xiangqin.testers import TestType
+
 from ..config import get_config
 from ..data_types import Hanzi
-from .data_types import Test, TestDone, TestNotFound, TestResults
-from .setup import get_async_redis
+from .client import get_async_redis
+
+
+@dataclass
+class TestJob:
+    test_id: int
+    test_type: TestType
 
 
 class Channel:
@@ -13,92 +20,68 @@ class Channel:
         self.redis = get_async_redis()
         self.config = get_config()
         self.queue_name = "test_queue"
+        self._char_queue_key = "{}_char_queue"
+        self._answer_queue_key = "{}_answer_queue"
+        self._char_cache_key = "{}_char_cache"
 
-    async def queue_test(self, test: Test) -> None:
-        async with self.redis.pipeline() as pipe:
-            await pipe.setex(test.test_id, self.config.test_timeout, orjson.dumps(asdict(test)))
-            await pipe.lpush(self.queue_name, test.test_id)
-            await pipe.execute()
+    def char_queue_key(self, test_id: int) -> str:
+        return self._char_queue_key.format(test_id)
 
-    async def pop_test(self) -> Test | None:
-        test_id = await self.redis.rpop(self.queue_name)
-        if test_id is None:
+    def answer_queue_key(self, test_id: int) -> str:
+        return self._answer_queue_key.format(test_id)
+
+    def char_cache_key(self, test_id: int) -> str:
+        return self._char_cache_key.format(test_id)
+
+    async def queue_test(self, test: TestJob) -> None:
+        await self.redis.lpush(self.queue_name, orjson.dumps(asdict((test))))
+
+    async def pop_test(self) -> TestJob | None:
+        test = await self.redis.rpop(self.queue_name)
+        if test is None:
             return None
 
-        return await self.test_by_id(test_id)
-
-    async def test_by_id(self, test_id: str) -> Test:
-        result = await self.redis.get(test_id)
-        if result is None:
-            raise TestNotFound
-
-        return Test(**orjson.loads(result))
+        return TestJob(**orjson.loads(test))
 
     # Worker methods - have access to Test object
 
-    async def put_character(self, test: Test, hanzi: Hanzi) -> None:
+    async def put_character(self, test_id: int, hanzi: Hanzi) -> None:
         async with self.redis.pipeline() as pipe:
-            await pipe.setex(
-                test.char_key, self.config.test_timeout, orjson.dumps(hanzi.model_dump())
+            await pipe.lpush(
+                self.char_queue_key(test_id),
+                orjson.dumps(hanzi.model_dump()),
             )
-            await pipe.expire(test.test_id, self.config.test_timeout)
+            await pipe.expire(self.char_queue_key(test_id), self.config.test_inactivity_timeout)
             await pipe.execute()
 
-    async def next_answer(self, test: Test) -> bool | None:
-        answer = await self.redis.getdel(test.answer_key)
+    async def next_answer(self, test_id: int) -> bool | None:
+        answer = await self.redis.rpop(self.answer_queue_key(test_id))
         if answer is None:
             return None
+
+        await self.redis.expire(self.answer_queue_key(test_id), self.config.test_inactivity_timeout)
         return answer == "1"
-
-    async def end_test(self, test: Test, results: TestResults) -> None:
-        """Sets results, deletes communication keys, and sets state to DONE"""
-        test.done = True
-        async with self.redis.pipeline() as pipe:
-            await self.redis.setex(
-                test.results_key, self.config.result_cache_ttl, orjson.dumps(asdict(results))
-            )
-            await self.redis.setex(
-                test.test_id, self.config.result_cache_ttl, orjson.dumps(asdict(test))
-            )
-            for key in [test.char_key, test.answer_key]:
-                await self.redis.delete(key)
-
-            await pipe.execute()
-
-    async def cancel_test(self, test: Test) -> None:
-        """Deletes all test keys"""
-        async with self.redis.pipeline() as pipe:
-            for key in [test.test_id, test.char_key, test.answer_key, test.results_key]:
-                await pipe.delete(key)
-            await pipe.execute()
 
     # API methods - have access to just test_id
 
-    async def next_character(self, test_id: str) -> Hanzi | None:
-        test = await self.test_by_id(test_id)
-        result = await self.redis.get(test.char_key)
-
+    async def next_character(self, test_id: int) -> Hanzi | None:
+        result = await self.redis.rpop(self.char_queue_key(test_id))
         if result is None:
-            if test.done:
-                raise TestDone
-            return None
+            result = await self.redis.get(self.char_cache_key(test_id))
+            if result is None:
+                return None
+
+        async with self.redis.pipeline() as pipe:
+            await pipe.set(self.char_cache_key(test_id), result)
+            await pipe.expire(self.char_cache_key(test_id), self.config.test_inactivity_timeout)
+            await pipe.expire(self.char_queue_key(test_id), self.config.test_inactivity_timeout)
+            await pipe.execute()
 
         return Hanzi(**orjson.loads(result))
 
-    async def put_answer(self, test_id: str, answer: bool) -> None:
-        test = await self.test_by_id(test_id)
-
+    async def put_answer(self, test_id: int, answer: bool) -> None:
         async with self.redis.pipeline() as pipe:
-            await pipe.delete(test.char_key)
-            await pipe.setex(test.answer_key, self.config.test_timeout, "1" if answer else "0")
-            await pipe.expire(test.test_id, self.config.test_timeout)
+            await pipe.lpush(self.answer_queue_key(test_id), "1" if answer else "0")
+            await pipe.delete(self.char_cache_key(test_id))
+            await pipe.expire(self.answer_queue_key(test_id), self.config.test_inactivity_timeout)
             await pipe.execute()
-
-    async def get_results(self, test_id: str) -> TestResults | None:
-        test = await self.test_by_id(test_id)
-
-        results = await self.redis.get(test.results_key)
-        if results is None:
-            return None
-
-        return TestResults(**orjson.loads(results))

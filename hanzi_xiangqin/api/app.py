@@ -23,6 +23,7 @@ def create_app() -> FastAPI:
     app.add_middleware(BaseHTTPMiddleware, dispatch=time_request)
 
     origins = ["http://localhost:3000", "*"]
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origins,

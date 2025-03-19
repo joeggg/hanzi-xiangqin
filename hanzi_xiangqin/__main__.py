@@ -28,6 +28,12 @@ def main() -> None:
             set_up_logging()
             asyncio.run(run_worker())
 
+        case "setup":
+            from hanzi_xiangqin.setup import set_up_database
+
+            set_up_logging()
+            set_up_database()
+
         case "cli":
             from hanzi_xiangqin.cli import run_cli
 
@@ -47,6 +53,7 @@ def parse_args() -> argparse.Namespace:
 
     subparsers.add_parser("api", description="Run the api")
     subparsers.add_parser("worker", description="Run the tester worker")
+    subparsers.add_parser("setup", description="Run the database setup")
 
     tester = subparsers.add_parser("cli", description="Run the tester in CLI mode")
     tester.add_argument(

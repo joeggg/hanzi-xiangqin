@@ -1,4 +1,4 @@
-import functools
+from functools import cache
 from typing import Any
 
 from pydantic import field_validator
@@ -7,9 +7,9 @@ from pydantic_settings import BaseSettings
 
 class Config(BaseSettings):
     data_dir: str = "data"
-    result_cache_ttl: int = 600
-    test_timeout: int = 3600
-    answer_timeout: int = 60
+    test_inactivity_timeout: int = 60
+    pg_pool_size: int = 20
+    redis_pool_size: int = 20
     num_workers: int = 1
     dev: bool = False
 
@@ -21,6 +21,6 @@ class Config(BaseSettings):
         return raw
 
 
-@functools.cache
+@cache
 def get_config() -> Config:
     return Config()

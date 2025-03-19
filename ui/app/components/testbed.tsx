@@ -57,7 +57,7 @@ export default function TestBed({
       setCard(<HanziCard font={font} />);
 
       // Small delay to wait for processing
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 200));
       const character = await nextCharacter();
       if (character) {
         setCard(<HanziCard character={character} font={font} />);
