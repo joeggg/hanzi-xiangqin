@@ -52,7 +52,7 @@ services:
     build:
       context: ./ui
       dockerfile: ../docker/ui.Dockerfile
-      target: development
+      target: ${UI_TARGET}
     ports:
       - "3000:3000"
     develop:
