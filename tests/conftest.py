@@ -35,14 +35,9 @@ def channel() -> Channel:
 
 @pytest.fixture(scope="session", autouse=True)
 def load_env() -> None:
-    if os.getenv("GITHUB_ACTIONS") == "true":
-        os.environ["PGHOST"] = "db"
-        os.environ["REDIS_HOST"] = "redis"
-
     os.environ["PGUSER"] = "hx"
     os.environ["PGPASSWORD"] = "postgres"
     os.environ["ROOT_PGPASSWORD"] = "postgres"
-    os.environ["PGPORT"] = "5432"
     os.environ["PGDATABASE"] = "hx"
 
 
