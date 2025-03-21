@@ -1,11 +1,10 @@
 from functools import cache
 
 from pydantic_settings import BaseSettings
-from redis.asyncio import Redis
+from redis import Redis
+from redis.asyncio import Redis as AsyncRedis
 from sqlalchemy import Engine, NullPool, create_engine
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
-
-from ..config import get_config
 
 
 class PostgresConfig(BaseSettings):
@@ -15,23 +14,51 @@ class PostgresConfig(BaseSettings):
     pghost: str = "localhost"
     pgport: int = 5432
     pgdatabase: str = ""
+    pg_pool_size: int = 20
+
+
+class RedisConfig(BaseSettings):
+    redis_host: str = "localhost"
+    redis_port: int = 6379
+    redis_pool_size: int = 20
 
 
 @cache
-def get_async_redis() -> Redis:
-    config = get_config()
-    return Redis(host="redis", max_connections=config.redis_pool_size, decode_responses=True)
+def get_redis() -> Redis:
+    config = RedisConfig()
+    return Redis(
+        host=config.redis_host,
+        port=config.redis_port,
+        max_connections=config.redis_pool_size,
+        decode_responses=True,
+    )
+
+
+@cache
+def get_async_redis() -> AsyncRedis:
+    config = RedisConfig()
+    return AsyncRedis(
+        host=config.redis_host,
+        port=config.redis_port,
+        max_connections=config.redis_pool_size,
+        decode_responses=True,
+    )
+
+
+@cache
+def get_postgres_config() -> PostgresConfig:
+    return PostgresConfig()
 
 
 @cache
 def get_engine() -> Engine:
-    config = get_config()
+    config = get_postgres_config()
     return create_engine(get_db_url(), pool_size=config.pg_pool_size)
 
 
 @cache
 def get_async_engine() -> AsyncEngine:
-    config = get_config()
+    config = get_postgres_config()
     return create_async_engine(get_db_url(), pool_size=config.pg_pool_size)
 
 

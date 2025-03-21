@@ -5,10 +5,12 @@ import time
 from dataclasses import dataclass
 from typing import Callable
 
+from pydantic_settings import BaseSettings
+
 from ..config import get_config
 from ..data_types import load_character_list
-from ..db import Channel, TestResults
-from ..testers import TESTERS, Tester
+from ..db import Channel, TestJob, TestResults
+from ..testers import TESTERS
 from .queries import delete_test, set_test_errored, set_test_in_progress, update_test_results
 
 
@@ -24,6 +26,14 @@ async def run_worker() -> None:
     await worker.run()
 
 
+class WorkerConfig(BaseSettings):
+    task_cleanup_interval_s: float = 5
+    heartbeat_interval_s: float = 60
+    poll_interval_s: float = 0.2
+    timer_poll_interval_s: float = 5
+    max_tasks: int = 100
+
+
 @dataclass
 class Job:
     test_id: int
@@ -31,13 +41,8 @@ class Job:
 
 
 class Worker:
-    TASK_CLEANUP_INTERVAL = 5
-    HEARTBEAT_INTERVAL = 60
-    POLL_INTERVAL = 0.2
-    TIMER_POLL_INTERVAL = 5
-    MAX_TASKS = 100
-
-    def __init__(self) -> None:
+    def __init__(self, config: WorkerConfig | None = None) -> None:
+        self.config = config or WorkerConfig()
         self.channel = Channel()
         self.shutting_down = False
 
@@ -49,35 +54,38 @@ class Worker:
 
         self.timer_tasks = [
             asyncio.create_task(
-                self.timer_task(lambda: logging.info("Worker heartbeat"), self.HEARTBEAT_INTERVAL)
+                self.timer_task(
+                    lambda: logging.info("Worker heartbeat"), self.config.task_cleanup_interval_s
+                )
             ),
-            asyncio.create_task(self.timer_task(self.cleanup_tasks, self.TASK_CLEANUP_INTERVAL)),
+            asyncio.create_task(
+                self.timer_task(self.cleanup_tasks, self.config.task_cleanup_interval_s)
+            ),
         ]
 
         while not self.shutting_down:
-            await asyncio.sleep(self.POLL_INTERVAL)
+            await asyncio.sleep(self.config.poll_interval_s)
 
             try:
                 test = await self.channel.pop_test()
                 if not test:
                     continue
 
-                if len(self.jobs) > self.MAX_TASKS:
+                if len(self.jobs) >= self.config.max_tasks:
                     logging.warning("Too many tasks, cancelling new test")
                     await delete_test(test.test_id)
                     continue
 
-                tester = TESTERS[test.test_type](load_character_list())
                 self.jobs.append(
-                    Job(
-                        test.test_id,
-                        asyncio.create_task(run_test(self.channel, tester, test.test_id)),
-                    )
+                    Job(test.test_id, asyncio.create_task(run_test(self.channel, test)))
                 )
 
             except Exception:
                 logging.exception("An unexpected error occurred in worker")
 
+        await self.cancel_tasks()
+
+    async def cancel_tasks(self) -> None:
         for job in self.jobs:
             job.task.cancel()
             try:
@@ -88,10 +96,10 @@ class Worker:
 
         await asyncio.gather(*self.timer_tasks)
 
-    async def timer_task(self, task: Callable[[], None], interval: int) -> None:
+    async def timer_task(self, task: Callable[[], None], interval: float) -> None:
         start = time.time()
         while not self.shutting_down:
-            await asyncio.sleep(self.TIMER_POLL_INTERVAL)
+            await asyncio.sleep(self.config.timer_poll_interval_s)
 
             if time.time() - start > interval:
                 task()
@@ -104,7 +112,9 @@ class Worker:
         self.jobs = [job for job in self.jobs if not job.task.done()]
 
 
-async def run_test(channel: Channel, tester: Tester, test_id: int) -> None:
+async def run_test(channel: Channel, test: TestJob) -> None:
+    test_id = test.test_id
+    tester = TESTERS[test.test_type](load_character_list())
     logging.info("[%s] Starting test", test_id)
     await set_test_in_progress(test_id)
     characters = tester.characters()

@@ -28,6 +28,20 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    services:
+      redis:
+        image: "redis:latest"
+        ports:
+          - 6379:6379
+      db:
+        image: "postgres:latest"
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+
     steps:
     - uses: actions/checkout@v2
 
@@ -44,4 +58,5 @@ jobs:
     - name: Run tests
       run: |
           uv sync --all-groups
-          uv run pytest tests
+          uv run coverage run --source hanzi_xiangqin -m pytest tests/ -svv
+          uv run coverage report -m

@@ -1,5 +1,12 @@
 from .channel import Channel, TestJob
-from .client import PostgresConfig, get_async_engine, get_async_redis, get_engine, get_setup_engine
+from .client import (
+    PostgresConfig,
+    get_async_engine,
+    get_async_redis,
+    get_engine,
+    get_redis,
+    get_setup_engine,
+)
 from .models import Base, Test, TestError, TestResults, TestStatus
 
 __all__ = [
@@ -14,5 +21,6 @@ __all__ = [
     "get_async_engine",
     "get_async_redis",
     "get_engine",
+    "get_redis",
     "get_setup_engine",
 ]
