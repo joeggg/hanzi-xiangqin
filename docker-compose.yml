@@ -12,6 +12,7 @@ services:
       PGPASSWORD: ${PGPASSWORD}
       PGHOST: ${PGHOST}
       PGDATABASE: ${PGDATABASE}
+      REDIS_HOST: ${REDIS_HOST}
     develop:
       watch:
         - path: ./hanzi_xiangqin
@@ -41,6 +42,7 @@ services:
       PGPASSWORD: ${PGPASSWORD}
       PGHOST: ${PGHOST}
       PGDATABASE: ${PGDATABASE}
+      REDIS_HOST: ${REDIS_HOST}
     develop:
       watch:
         - path: ./hanzi_xiangqin
