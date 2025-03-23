@@ -6,8 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import AfterValidator
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ...db import Channel, Test, TestJob, TestResults, TestStatus
-from ...testers import TestType
+from ...db import Channel, Test, TestJob, TestResults, TestStatus, TestType
 from ..dependencies import channel, db_session
 from .crud import create_test, get_test_by_uid, get_test_id_and_status, get_test_results
 from .schemas import AnswerBody, NextCharacterResponse, StartTestResponse, TestRespone

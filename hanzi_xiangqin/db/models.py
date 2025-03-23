@@ -7,14 +7,17 @@ from sqlalchemy import BigInteger, text
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 
-from ..testers import TestType
-
 
 class TestStatus(StrEnum):
     PENDING = "pending"
     IN_PROGRESS = "in_progress"
     DONE = "done"
     ERROR = "error"
+
+
+class TestType(StrEnum):
+    SIMPLE = "simple"
+    LEAST_SQUARES = "least_squares"
 
 
 class TestResults(TypedDict):

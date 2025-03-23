@@ -4,8 +4,7 @@ import logging
 import pytest
 from pytest_mock import MockerFixture
 
-from hanzi_xiangqin.db import Channel, TestJob
-from hanzi_xiangqin.testers import TestType
+from hanzi_xiangqin.db import Channel, TestJob, TestType
 from hanzi_xiangqin.worker.worker import Worker, WorkerConfig
 
 

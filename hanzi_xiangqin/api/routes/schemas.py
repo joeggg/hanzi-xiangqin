@@ -4,8 +4,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from ...data_types import Hanzi
-from ...db import TestStatus
-from ...testers import TestType
+from ...db import TestStatus, TestType
 
 
 class StartTestResponse(BaseModel):

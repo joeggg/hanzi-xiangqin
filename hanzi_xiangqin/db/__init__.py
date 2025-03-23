@@ -7,7 +7,7 @@ from .client import (
     get_redis,
     get_setup_engine,
 )
-from .models import Base, Test, TestError, TestResults, TestStatus
+from .models import Base, Test, TestError, TestResults, TestStatus, TestType
 
 __all__ = [
     "Base",
@@ -18,6 +18,7 @@ __all__ = [
     "TestJob",
     "TestResults",
     "TestStatus",
+    "TestType",
     "get_async_engine",
     "get_async_redis",
     "get_engine",

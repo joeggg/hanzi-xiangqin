@@ -7,8 +7,7 @@ from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from hanzi_xiangqin.data_types import Definition, Hanzi
-from hanzi_xiangqin.db import Channel, Test, TestStatus
-from hanzi_xiangqin.testers import TestType
+from hanzi_xiangqin.db import Channel, Test, TestStatus, TestType
 
 
 @pytest.fixture

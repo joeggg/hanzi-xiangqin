@@ -2,11 +2,10 @@ from dataclasses import asdict, dataclass
 
 import orjson
 
-from hanzi_xiangqin.testers import TestType
-
 from ..config import get_config
 from ..data_types import Hanzi
 from .client import get_async_redis
+from .models import TestType
 
 
 @dataclass

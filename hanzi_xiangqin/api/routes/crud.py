@@ -3,8 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ...db import Test, TestResults, TestStatus
-from ...testers import TestType
+from ...db import Test, TestResults, TestStatus, TestType
 
 
 async def create_test(session: AsyncSession, test_type: TestType | None = None) -> Test:
