@@ -18,6 +18,9 @@ class Hanzi(BaseModel):
     rank: int
     definitions: list[Definition]
 
+    def __hash__(self) -> int:
+        return hash(self.simplified)
+
 
 def load_dictionary() -> dict[str, list[Definition]]:
     dictionary = defaultdict(list)
@@ -57,7 +60,7 @@ def load_character_list() -> list[Hanzi]:
                 Hanzi(
                     simplified=simplified,
                     traditional=traditional,
-                    rank=i + 1,
+                    rank=i // 2 + 1,
                     definitions=dictionary.get(simplified, dictionary.get(traditional, [])),
                 )
             )
