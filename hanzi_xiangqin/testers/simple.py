@@ -1,25 +1,11 @@
 import itertools
 import random
 from collections import defaultdict
-from dataclasses import asdict, dataclass
 from typing import Generator
 
 from ..data_types import Hanzi
-from .tester import Tester
-
-
-@dataclass
-class GuessResults:
-    correct: int = 0
-    incorrect: int = 0
-
-    def __add__(self, other: "GuessResults") -> "GuessResults":
-        return GuessResults(
-            correct=self.correct + other.correct, incorrect=self.incorrect + other.incorrect
-        )
-
-    def ratio(self) -> float:
-        return self.correct / (self.correct + self.incorrect)
+from .estimators import Estimator, LeastSquaresEstimator
+from .tester import GuessResults, Tester
 
 
 class SimpleTester(Tester):
@@ -41,6 +27,7 @@ class SimpleTester(Tester):
         bin_size: int = 500,
         chars_per_level: int = 4,
         max_level_repeats: int = 2,
+        estimator: type[Estimator] = LeastSquaresEstimator,
     ) -> None:
         super().__init__(chars)
         self.name = "simple"
@@ -48,6 +35,7 @@ class SimpleTester(Tester):
         self.bin_size = bin_size
         self.chars_per_level = chars_per_level
         self.max_level_repeats = max_level_repeats
+        self.estimator = estimator()
 
         self.seen_chars: set[Hanzi] = set()
         self.answers: dict[int, GuessResults] = defaultdict(GuessResults)
@@ -101,6 +89,8 @@ class SimpleTester(Tester):
 
             char = self._get_character(current_bin)
 
+        self.answers = {self.bin_size * (bin + 1): results for bin, results in self.answers.items()}
+
     def _incr_bin(self, current_bin: int) -> int:
         """Increment bin if below the maximum"""
         if current_bin == len(self.bins) - 1:
@@ -119,42 +109,3 @@ class SimpleTester(Tester):
             ...
         self.seen_chars.add(char)
         return char
-
-    def estimate_count(self) -> int:
-        correct_ratios = {
-            bin: results.correct / (results.correct + results.incorrect)
-            for bin, results in self.answers.items()
-        }
-        max_bin = max(self.answers.keys())
-
-        # Get the last bin with a ratio over 50% and the first bin with a non-zero ratio below 50%
-        last_over_50, last_below_50 = 0, max_bin + 1
-        for bin, ratio in correct_ratios.items():
-            if ratio >= 0.5:
-                last_over_50 = bin
-            elif ratio > 0:
-                last_below_50 = bin
-
-        # Get the number of chars up to each bin and the diff between the 2
-        last_over_50_chars = (last_over_50 + 1) * self.bin_size
-        last_below_50_chars = (last_below_50 + 1) * self.bin_size
-        diff = last_below_50_chars - last_over_50_chars
-
-        # Get the midpoint between the latest max and bin ratios
-        last_over_50_ratio = correct_ratios[last_over_50]
-        last_below_50_ratio = correct_ratios.get(last_below_50, 0)
-        ratio_midpoint = (last_over_50_ratio + last_below_50_ratio) / 2
-        # Multipy ratio midpoint by the diff to estimate characters known above the last over 50%
-        # bin
-        extra_chars = ratio_midpoint * diff
-
-        # Assume all chars before last over 50% bin are known
-        # Use the ratio to get characters known in that last bin
-        # Add the extra chars estimated above that last bin
-        return round((last_over_50 + last_over_50_ratio) * self.bin_size) + round(extra_chars)
-
-    def get_breakdown(self) -> dict:
-        breakdown = {}
-        for bin, results in self.answers.items():
-            breakdown[f"{(bin * self.bin_size) + 1}-{(bin + 1) * self.bin_size}"] = asdict(results)
-        return breakdown

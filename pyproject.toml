@@ -22,12 +22,16 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 api = ["fastapi>=0.115.9", "uvicorn>=0.34.0"]
-worker = ["scipy>=1.15.2"]
+worker = [
+    "numpy>=2.2.3",
+    "scipy>=1.15.2",
+]
 dev = [
   "anyio>=4.8.0",
   "coverage>=7.7.0",
   "dotenv>=0.9.9",
   "httpx>=0.28.1",
+  "matplotlib>=3.10.1",
   "mypy>=1.15.0",
   "pytest>=8.3.5",
   "pytest-asyncio>=0.25.3",
@@ -37,7 +41,8 @@ dev = [
 ]
 
 [[tool.mypy.overrides]]
-module = ["orjson.*"]
+plugins = "numpy.typing.mypy_plugin"
+module = ["orjson.*", "scipy.*"]
 ignore_missing_imports = true
 
 [tool.ruff]

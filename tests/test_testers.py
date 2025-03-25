@@ -4,19 +4,12 @@ from typing import Iterable
 import pytest
 
 from hanzi_xiangqin.data_types import Hanzi, load_character_list
-from hanzi_xiangqin.testers import LeastSquaresTester, SimpleTester, Tester
+from hanzi_xiangqin.testers import SimpleTester, Tester
 
 
 @pytest.fixture
 def simple_tester() -> SimpleTester:
     return SimpleTester(load_character_list(), bin_size=500, chars_per_level=2, max_level_repeats=4)
-
-
-@pytest.fixture
-def lq_tester() -> SimpleTester:
-    return LeastSquaresTester(
-        load_character_list(), bin_size=500, chars_per_level=5, max_level_repeats=2
-    )
 
 
 def run_answer_sequence(tester: Tester, answers: Iterable[bool]) -> list[Hanzi]:
