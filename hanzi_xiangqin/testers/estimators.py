@@ -1,3 +1,4 @@
+import itertools
 from typing import TYPE_CHECKING, Protocol
 
 import numpy as np
@@ -9,7 +10,9 @@ if TYPE_CHECKING:
 
 
 class Estimator(Protocol):
-    def estimate_count(self, answers: dict[int, "GuessResults"]) -> int: ...
+    def estimate_count(
+        self, answers: dict[int, "GuessResults"], maximum_characters: int
+    ) -> np.float64: ...
 
 
 def tanh_model(x: npt.NDArray[np.float64], t: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
@@ -17,11 +20,14 @@ def tanh_model(x: npt.NDArray[np.float64], t: npt.NDArray[np.float64]) -> npt.ND
     return 0.5 - 0.5 * np.tanh((x[0] * t) - x[1])
 
 
-def tanh_model_inverse(
-    x: npt.NDArray[np.float64], y: npt.NDArray[np.float64]
-) -> npt.NDArray[np.float64]:
-    """Inverse of the tanh model to get t for a given y"""
-    return (np.arctanh((0.5 - y) / 0.5) + x[1]) / x[0]
+def tanh_model_integral(x: npt.NDArray[np.float64], a: np.float64, b: np.float64) -> np.float64:
+    """Calculate integral of the tanh model between a and b"""
+    return _tanh_model_integral(x, b) - _tanh_model_integral(x, a)
+
+
+def _tanh_model_integral(x: npt.NDArray[np.float64], t: np.float64) -> np.float64:
+    """Calculate integral of the tanh model at a particular point, ignoring c"""
+    return 0.5 * t - (0.5 * np.log(np.cosh(x[0] * t - x[1])) / x[0])
 
 
 def tanh_model_residual(
@@ -32,20 +38,52 @@ def tanh_model_residual(
 
 
 class LeastSquaresEstimator:
+    """
+    Fits a tanh curve to the given test data using scipy's least_squares function, then will
+    integrate across the total number of characters to estimate the number of characters known
+    """
+
     def __init__(self) -> None:
         self.name = "least_squares"
+        self.maximum_characters = 10_000
 
         self.t: npt.NDArray[np.float64]
         self.y: npt.NDArray[np.float64]
         self.x: npt.NDArray[np.float64]
 
-    def estimate_count(self, answers: dict[int, "GuessResults"]) -> int:
-        # Get the bin sizes and the number of correct answers for each
-        ordered_answers = sorted(answers.keys())
-        self.t = np.array([0, *ordered_answers, 10000], np.float64)
-        self.y = np.array([1.0, *[answers[k].ratio() for k in ordered_answers], 0.0], np.float64)
-        # Fit a tanh model to the data
+    def _get_t_padding(self) -> list[int]:
+        return list(range(self.maximum_characters, self.maximum_characters + 20_000, 1000))
+
+    @property
+    def t_without_padding(self) -> npt.NDArray[np.float64]:
+        padding = self._get_t_padding()
+        return self.t[: -len(padding)]
+
+    @property
+    def y_without_padding(self) -> npt.NDArray[np.float64]:
+        padding = self._get_t_padding()
+        return self.y[: -len(padding)]
+
+    def estimate_count(
+        self, answers: dict[int, "GuessResults"], maximum_characters: int
+    ) -> np.float64:
+        self.maximum_characters = maximum_characters
+        # Ensure bins are sorted from lowest to highest
+        ordered_bins = sorted(answers.keys())
+        # Padding helps ensure the curve drops to 0 soon after the max number of characters
+        top_padding = self._get_t_padding()
+
+        self.t = np.array([*ordered_bins, *top_padding], np.float64)
+        self.y = np.array(
+            [
+                *[answers[k].ratio() for k in ordered_bins],
+                *itertools.repeat(0.0, len(top_padding)),
+            ],
+            np.float64,
+        )
+        # Initialise with experimentally determined parameters that form a believable curve
         x0 = np.array([0.001, 3])
+        # Fit a tanh model to the data
         results = least_squares(
             tanh_model_residual,
             x0,
@@ -53,9 +91,8 @@ class LeastSquaresEstimator:
             loss="soft_l1",
         )
         self.x = results.x
-        estimate = tanh_model_inverse(self.x, np.array([0.5]))[0]
-
-        return int(estimate.round())
+        # Get the area under the curve from 0 to the max number of characters
+        return tanh_model_integral(self.x, np.float64(0), np.float64(self.maximum_characters))
 
 
 class SimpleEstimator:

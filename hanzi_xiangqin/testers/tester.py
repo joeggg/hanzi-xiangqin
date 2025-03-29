@@ -3,6 +3,8 @@ from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
 from typing import Generator
 
+import numpy as np
+
 from ..data_types import Hanzi
 from .estimators import Estimator
 
@@ -34,7 +36,9 @@ class Tester(ABC):
 
     def estimate_count(self) -> int:
         """Estimates the number of characters known by the user"""
-        return self.estimator.estimate_count(self.answers)
+        count = self.estimator.estimate_count(self.answers, len(self.chars))
+        # Prevent negative estimates
+        return int(np.max([count, np.float64(0)]).round(-2))
 
     def get_breakdown(self) -> dict:
         return {freq_level: asdict(results) for freq_level, results in self.answers.items()}

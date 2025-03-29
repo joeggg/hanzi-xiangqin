@@ -22,7 +22,7 @@ export default async function ResultsPage({
         You know an estimated
         <br />
         <Text weight="bold" size="8" align="center">
-          {data.count}
+          {data.count}+
         </Text>
         <br /> characters
       </Text>
