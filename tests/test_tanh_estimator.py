@@ -3,6 +3,7 @@ import shutil
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pytest
 
 from hanzi_xiangqin.data_types import load_character_list
 from hanzi_xiangqin.testers import GuessResults
@@ -12,18 +13,19 @@ from hanzi_xiangqin.testers.estimators import (
     tanh_model_integral,
 )
 
-domain = list(range(500, 9000, 500))
+DOMAIN = list(range(500, 9000, 500))
+COPY_TO = "plots"
 
 TEST_CASES = {
-    "flat_high": {x: GuessResults(1, 0) for x in domain},
-    "flat_low": {x: GuessResults(0, 1) for x in domain},
+    "flat_high": {x: GuessResults(1, 0) for x in DOMAIN},
+    "flat_low": {x: GuessResults(0, 1) for x in DOMAIN},
     "single_low": {x: GuessResults(0, 1) for x in [500]},
-    "linear_decreasing": {x: GuessResults(len(domain) - i, i) for i, x in enumerate(domain, 1)},
+    "linear_decreasing": {x: GuessResults(len(DOMAIN) - i, i) for i, x in enumerate(DOMAIN, 1)},
     "slow_linear_decreasing": {
-        x: GuessResults(3 * len(domain) - i, i) for i, x in enumerate(domain, 1)
+        x: GuessResults(3 * len(DOMAIN) - i, i) for i, x in enumerate(DOMAIN, 1)
     },
     "fast_linear_decreasing": {
-        x: GuessResults(max(0, len(domain) - 2 * i), 2 * i) for i, x in enumerate(domain, 1)
+        x: GuessResults(max(0, len(DOMAIN) - 2 * i), 2 * i) for i, x in enumerate(DOMAIN, 1)
     },
     "realistic_medium": {
         500: GuessResults(4, 0),
@@ -59,30 +61,29 @@ TEST_CASES = {
 }
 
 
-def run_plot_tests() -> None:
-    copy_to = "/mnt/c/Users/Joe/Desktop/plots"
-
+@pytest.fixture(scope="module", autouse=True)
+def set_up_and_copy_plots():
     if os.path.exists("plots"):
         shutil.rmtree("plots")
+
     os.mkdir("plots")
 
-    for name, answers in TEST_CASES.items():
-        create_plot(answers, name)
+    yield
 
-    if os.path.exists(copy_to):
-        shutil.rmtree(copy_to)
+    if os.path.exists(COPY_TO):
+        shutil.rmtree(COPY_TO)
 
-    shutil.copytree("plots", copy_to)
+    shutil.copytree("plots", COPY_TO)
 
 
-def create_plot(answers: dict[int, GuessResults], name: str) -> None:
+@pytest.mark.parametrize("name,answers", list(TEST_CASES.items()))
+def test_tanh_estimator(name: str, answers: dict[int, GuessResults]) -> None:
     estimator = LeastSquaresEstimator()
     count = estimator.estimate_count(answers, len(load_character_list()))
 
     print(estimator.x)
     print(count)
     print(f"{int(np.max([count, np.float64(0)]).round(-2))}+")
-    print()
 
     plt.plot(estimator.t_without_padding, estimator.y_without_padding, "o")
     new_t = np.linspace(1, 10_000, 10_000, dtype=np.float64)
@@ -98,7 +99,3 @@ def create_plot(answers: dict[int, GuessResults], name: str) -> None:
     plt.title(name)
     plt.savefig(f"plots/{name}.png")
     plt.clf()
-
-
-if __name__ == "__main__":
-    run_plot_tests()
