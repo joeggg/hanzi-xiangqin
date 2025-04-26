@@ -135,7 +135,8 @@ async def run_test(channel: Channel, test: TestJob) -> None:
                 pass
 
         await update_test_results(
-            test_id, TestResults(count=tester.estimate_count(), breakdown=tester.get_breakdown())
+            test_id,
+            TestResults(count=tester.estimate_count(), breakdown=tester.get_breakdown().to_dict()),
         )
         logging.info("[%s] Completed test", test_id)
 

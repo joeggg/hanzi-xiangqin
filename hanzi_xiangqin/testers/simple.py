@@ -38,7 +38,7 @@ class SimpleTester(Tester):
         self.estimator = estimator()
 
         self.seen_chars: set[Hanzi] = set()
-        self.answers: dict[int, GuessResults] = defaultdict(GuessResults)
+        self.answers: dict[tuple[int, int], GuessResults] = defaultdict(GuessResults)
         self.bins = list(itertools.batched(self.chars, self.bin_size))
         self.second_stage = False
 
@@ -65,7 +65,8 @@ class SimpleTester(Tester):
 
             # Change level once number of characters reached
             if char_no % self.chars_per_level == 0:
-                self.answers[current_bin] += current_results
+                bin_interval = (current_bin * self.bin_size, (current_bin + 1) * self.bin_size)
+                self.answers[bin_interval] += current_results
 
                 if self.second_stage:
                     # In 2nd stage inc/decr bin based on ratio, break if bin visited too many times
@@ -88,8 +89,6 @@ class SimpleTester(Tester):
                 current_results = GuessResults()
 
             char = self._get_character(current_bin)
-
-        self.answers = {self.bin_size * (bin + 1): results for bin, results in self.answers.items()}
 
     def _incr_bin(self, current_bin: int) -> int:
         """Increment bin if below the maximum"""
