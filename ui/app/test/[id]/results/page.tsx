@@ -1,7 +1,8 @@
-import { Text } from "@radix-ui/themes";
-
-import client from "app/tools/client";
+import { Box, Text } from "@radix-ui/themes";
 import { redirect } from "next/navigation";
+
+import ResultsChart from "@/app/components/chart";
+import client from "@/app/tools/client";
 
 export default async function ResultsPage({
   params,
@@ -29,8 +30,8 @@ export default async function ResultsPage({
       <Text>
         Breakdown:
         <br />
-        {JSON.stringify(data.breakdown, null, 2)}
       </Text>
+      <ResultsChart breakdown={data.breakdown} style={{ height: "auto" }} />
     </>
   ) : (
     <Text>Something went wrong, try refreshing</Text>
